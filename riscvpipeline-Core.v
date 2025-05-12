@@ -83,6 +83,12 @@ module riscv_Core
   wire        branch_cond_geu_Xhl;
   wire [31:0] proc2csr_data_Whl;
 
+  // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
+  // Forwarding taps from MEM stage
+  wire        rf_wen_Mhl;
+  wire [4:0]  rf_waddr_Mhl;
+  wire [31:0] execute_mux_out_Mhl;
+
   //----------------------------------------------------------------------
   // Pack Memory Request Messages
   //----------------------------------------------------------------------
@@ -185,6 +191,12 @@ module riscv_Core
     .branch_cond_geu_Xhl	  (branch_cond_geu_Xhl),
     .proc2csr_data_Whl      (proc2csr_data_Whl),
 
+    // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
+
+    .rf_wen_Mhl           (rf_wen_Mhl),
+    .rf_waddr_Mhl         (rf_waddr_Mhl),
+    .execute_mux_out_Mhl  (execute_mux_out_Mhl),
+
     // CSR Status
 
     .csr_status             (csr_status)
@@ -244,6 +256,12 @@ module riscv_Core
     .branch_cond_ge_Xhl	     (branch_cond_ge_Xhl),
     .branch_cond_geu_Xhl	 (branch_cond_geu_Xhl),
     .proc2csr_data_Whl       (proc2csr_data_Whl)
+
+    // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
+    .rf_wen_Mhl           (rf_wen_Mhl),
+    .rf_waddr_Mhl         (rf_waddr_Mhl),
+    .execute_mux_out_Mhl  (execute_mux_out_Mhl),
+    
   );
 
 endmodule

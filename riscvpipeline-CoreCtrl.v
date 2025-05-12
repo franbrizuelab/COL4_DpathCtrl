@@ -53,6 +53,11 @@ module riscv_CoreCtrl
   output            stall_Mhl,
   output            stall_Whl,
 
+  // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
+  output        rf_wen_Mhl,
+  output [4:0]  rf_waddr_Mhl,
+  output [31:0] execute_mux_out_Mhl,
+  
   // Control Signals (dpath->ctrl)
 
   input         branch_cond_eq_Xhl,
@@ -74,7 +79,7 @@ module riscv_CoreCtrl
 
   // PC Mux Select
 
-  assign pc_mux_sel_Phl = ; // TODO
+  assign pc_mux_sel_Phl = pc_mux_sel_Dhl; // TODO (done)
 
   // Only send a valid imem request if not stalled
 
@@ -118,12 +123,12 @@ module riscv_CoreCtrl
 
   // Is the current stage valid?
 
-  wire inst_val_Fhl = ; // TODO
+  wire inst_val_Fhl = !bubble_Fhl; // TODO (done) Use the "bubble bit"
 
   // Squash instruction in F stage if branch taken for a valid
   // instruction or if there was an exception in X stage
 
-  wire squash_Fhl = ; // TODO
+  wire squash_Fhl = brj_taken_Xhl && inst_val_Xhl; // TODO (done)
 
   // Stall in F if D is stalled
 
@@ -302,7 +307,7 @@ module riscv_CoreCtrl
 
   // Is the current stage valid?
 
-  wire inst_val_Dhl = ; // TODO
+  wire inst_val_Dhl = !bubble_Dhl; // TODO (done) Use the "bubble bit"
 
   // Ship instruction for field parsing to datapath
 
@@ -345,126 +350,143 @@ module riscv_CoreCtrl
   always @ (*) begin
 
     cs = {cs_sz{1'bx}}; // Default to invalid instruction
-
+    
+    //DISCLAIMER: I just cpied the exact implemnetation here, later we'll see if it works. Since the most important part is the htandlijng fo hazards and the actual used components doesnt change, it should be safe enough to just copy it :p
+    
     casez ( ir_Dhl )
 
-      //                                j  br       pc      op0      rs1 op1       rs2 alu       md       md md     ex      mem  mem   memresp wb      rf  rf  csr
-      //                            val en sel      muxsel  muxsel   en  muxsel    en  fn        fn       en muxsel muxsel  rwq  len   muxsel  muxsel  wen wa  wen
-      `RISCV_INST_MSG_LUI     :cs={ y,  n, br_none, pm_p,   am_0,    n,  bm_imm_u, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
-      `RISCV_INST_MSG_AUIPC   :cs={ y,  n, br_none, pm_p,   am_pc,   n,  bm_imm_u, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      //                                j     br       pc      op0      rs1 op1       rs2 alu       md       md md     ex      mem  mem   memresp wb      rf  rf  csr
+      //                            val en    sel      muxsel  muxsel   en  muxsel    en  fn        fn       en muxsel muxsel  rwq  len   muxsel  muxsel  wen wa  wen
+      `RISCV_INST_MSG_LUI     :cs={ y,  n,    br_none, pm_p,   am_0,    n,  bm_imm_u, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_AUIPC   :cs={ y,  n,    br_none, pm_p,   am_pc,   n,  bm_imm_u, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
  
-      `RISCV_INST_MSG_ADDI    :cs={ y,  n, br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
-      `RISCV_INST_MSG_ORI     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SLTI    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SLTIU   :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_XORI    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_ANDI    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SLLI    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SRLI    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SRAI    :cs={                                                                                                                            n }; // TODO
- 
-      `RISCV_INST_MSG_ADD     :cs={ y,  n, br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
-      `RISCV_INST_MSG_SUB     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SLL     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SLT     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SLTU    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_XOR     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SRL     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SRA     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_OR      :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_AND     :cs={                                                                                                                            n }; // TODO
-       
-      `RISCV_INST_MSG_LW      :cs={ y,  n, br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_x,   ld,  ml_w, dmm_w,  wm_mem, y,  rd, n };
-      `RISCV_INST_MSG_LB      :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_LH      :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_LBU     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_LHU     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SW      :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SB      :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_SH      :cs={                                                                                                                            n }; // TODO
-       
-      `RISCV_INST_MSG_JAL     :cs={ y,  y, br_none, pm_j,   am_pc4,  n,  bm_0,     n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
-      `RISCV_INST_MSG_JALR    :cs={                                                                                                                            n }; // TODO  
+      `RISCV_INST_MSG_ADDI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_ORI     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_or,   md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SLTI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_lt,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SLTIU   :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_ltu, md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };  
+      `RISCV_INST_MSG_XORI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_xor,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_ANDI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_and,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SLLI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_shamt, n,  alu_sll,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SRLI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_shamt, n,  alu_srl,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SRAI    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_shamt, n,  alu_sra,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
       
-      `RISCV_INST_MSG_BNE     :cs={ y,  n, br_bne,  pm_b,   am_rdat, y,  bm_rdat,  y,  alu_xor,  md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
-      `RISCV_INST_MSG_BEQ     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_BLT     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_BGE     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_BLTU    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_BGEU    :cs={                                                                                                                            n }; // TODO
+
+      `RISCV_INST_MSG_ADD     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SUB     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_sub,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SLL     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_sll,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SLT     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_lt,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SLTU    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_ltu, md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_XOR     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_xor,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SRL     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_srl,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_SRA     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_sra,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_OR      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_or,   md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_AND     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_and,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
        
-      `RISCV_INST_MSG_MUL     :cs={ y,  n, br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_x,    md_mul,  y, mdm_l, em_md,  nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
-      `RISCV_INST_MSG_DIV     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_REM     :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_DIVU    :cs={                                                                                                                            n }; // TODO
-      `RISCV_INST_MSG_REMU    :cs={                                                                                                                            n }; // TODO
+      
+      `RISCV_INST_MSG_LW      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_x,   ld,  ml_w, dmm_w,  wm_mem, y,  rd, n };
+      `RISCV_INST_MSG_LB      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_x,   ld,  ml_b, dmm_b,  wm_mem, y,  rd, n };
+      `RISCV_INST_MSG_LH      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_x,   ld,  ml_h, dmm_h,  wm_mem, y,  rd, n };
+      `RISCV_INST_MSG_LBU     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_x,   ld,  ml_b, dmm_bu, wm_mem, y,  rd, n };
+      `RISCV_INST_MSG_LHU     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_x,   ld,  ml_h, dmm_hu, wm_mem, y,  rd, n };
+      `RISCV_INST_MSG_SW      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_s, y,  alu_add,  md_x,    n, mdm_x, em_x,   st,  ml_w, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_SB      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_s, y,  alu_add,  md_x,    n, mdm_x, em_x,   st,  ml_b, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_SH      :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_imm_s, y,  alu_add,  md_x,    n, mdm_x, em_x,   st,  ml_h, dmm_x,  wm_x,   n,  rx, n };
        
-      `RISCV_INST_MSG_CSRW    :cs={ y,  n, br_none, pm_p,   am_rdat, y,  bm_0,     y,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, n,  rx, y };
+      `RISCV_INST_MSG_JAL     :cs={ y,  y,    br_none, pm_j,   am_pc4,  n,  bm_0,     n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_JALR    :cs={ y,  y,    br_none, pm_r,   am_pc4,  y,  bm_imm_i, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+
+      `RISCV_INST_MSG_BNE     :cs={ y,  n,    br_bne,  pm_b,   am_rdat, y,  bm_rdat,  y,  alu_xor,  md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_BEQ     :cs={ y,  n,    br_beq,  pm_b,   am_rdat, y,  bm_rdat,  y,  alu_xor,  md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_BLT     :cs={ y,  n,    br_blt,  pm_b,   am_rdat, y,  bm_rdat,  y,  alu_lt,  md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_BGE     :cs={ y,  n,    br_bge,  pm_b,   am_rdat, y,  bm_rdat,  y,  alu_lt,  md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_BLTU    :cs={ y,  n,    br_bltu, pm_b,   am_rdat, y,  bm_rdat,  y,  alu_ltu, md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
+      `RISCV_INST_MSG_BGEU    :cs={ y,  n,    br_bgeu, pm_b,   am_rdat, y,  bm_rdat,  y,  alu_ltu, md_x,    n, mdm_x, em_x,   nr,  ml_x, dmm_x,  wm_x,   n,  rx, n };
+       
+      `RISCV_INST_MSG_MUL     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_x,    md_mul,  y, mdm_l, em_md,  nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_DIV     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_x,    md_div,  y, mdm_l, em_md,  nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_REM     :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_x,    md_div,  y, mdm_u, em_md,  nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_DIVU    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_x,    md_divu, y, mdm_l, em_md,  nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+      `RISCV_INST_MSG_REMU    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_rdat,  y,  alu_x,    md_divu, y, mdm_u, em_md,  nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
+       
+      `RISCV_INST_MSG_CSRW    :cs={ y,  n,    br_none, pm_p,   am_rdat, y,  bm_0,     y,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, n,  rx, y };
 
     endcase
 
   end
 
   // Jump and Branch Controls
+  // Tell the rest of the control-unit and PC‐mux whether the current instr. is a branch or jump, and which one it is
+  
+  // Take the bits that define the branch
+  wire [2:0] br_sel_Dhl    = cs[36:34]; // TODO (done) according to the control message bits
 
-  wire       brj_taken_Dhl = ; // TODO
-  wire [2:0] br_sel_Dhl    = ; // TODO 
+  wire instr_is_jump_Dhl   = cs[37];     // 1 for JAL/JALR
+  wire instr_is_branch_Dhl = (br_sel_Dhl != br_none);
+
+  // Boolean to indicate whether a branch or jump has been taken
+  wire brj_taken_Dhl =                            // TODO (Done)
+        instr_is_jump_Dhl                         // JAL/JALR
+        || ( instr_is_branch_Dhl ? brj_taken_Xhl  // If current stage doesn't have a branch, check execute stage result (brj_taken_Xhl)
+        : 1'b0 );
 
   // PC Mux Select
 
-  wire [1:0] pc_mux_sel_Dhl = ; // TODO
+  wire [1:0] pc_mux_sel_Dhl = cs[33:32]; // TODO (done) according to the control message bits
 
   // Operand RF Read Addresses and Enables (using rs or rt?)
 
   wire [4:0] rs1_addr_Dhl   = inst_rs1_Dhl;
   wire [4:0] rs2_addr_Dhl   = inst_rs2_Dhl;
 
-  wire       rs1_en_Dhl     = ; // TODO
-  wire       rs2_en_Dhl     = ; // TODO
+  wire       rs1_en_Dhl     = cs[29]; // TODO (done) what comes after op0_muxsel
+  wire       rs2_en_Dhl     = cs[25]; // TODO (done) what comes after op1_muxsel
 
   // Operand Mux Select
 
-  assign op0_mux_sel_Dhl = ; // TODO
-  assign op1_mux_sel_Dhl = ; // TODO
+  assign op0_mux_sel_Dhl = cs[31:30]; // TODO (done) as bf 
+  assign op1_mux_sel_Dhl = cs[28:26]; // TODO (done) as bf
 
   // ALU Function
 
-  wire [3:0] alu_fn_Dhl = ; // TODO
+  wire [3:0] alu_fn_Dhl = cs[24:21]; // TODO (done) as bf
 
   // Muldiv Function
 
-  wire [2:0] muldivreq_msg_fn_Dhl = ; // TODO
+  wire [2:0] muldivreq_msg_fn_Dhl = cs[20:18]; // TODO (done) as BF
 
   // Muldiv Controls
 
-  wire muldivreq_val_Dhl = ; // TODO
+  //Bit that specifies whether there is a muldiv unit request
+  wire muldivreq_val_Dhl = cs[17]; // TODO (Done) bit that goeas after 'muldivreq_msg_fn_Dhl'
 
   // Muldiv Mux Select
 
-  wire muldiv_mux_sel_Dhl = ; // TODO
+  // Take upper part of muldiv result or lower part?
+  wire muldiv_mux_sel_Dhl = cs[16]; // TODO (done)
 
   // Execute Mux Select
 
-  wire execute_mux_sel_Dhl = ; // TODO
+
+  wire execute_mux_sel_Dhl = cs[15]; // TODO (Done) meh
 
   // Memory Controls
 
-  wire       dmemreq_msg_rw_Dhl  = ; // TODO
-  wire [1:0] dmemreq_msg_len_Dhl = ; // TODO
+  wire       dmemreq_msg_rw_Dhl  = cs[14:13]; // TODO (done) 2 bits for 3 states
+  wire [1:0] dmemreq_msg_len_Dhl = cs[12:11]; // TODO (done) same
   wire       dmemreq_val_Dhl     = ( cs[`RISCV_INST_MSG_MEM_REQ] != nr );
 
   // Memory response mux select
 
-  wire [2:0] dmemresp_mux_sel_Dhl = ; // TODO
+  wire [2:0] dmemresp_mux_sel_Dhl = cs[10:8]; // TODO (done) same as bf
 
   // Writeback Mux Select
 
-  wire wb_mux_sel_Dhl = ; // TODO
+  wire wb_mux_sel_Dhl = cs[7]; // TODO (done) same as bf
 
   // Register Writeback Controls
 
-  wire rf_wen_Dhl         = ; // TODO
-  wire [4:0] rf_waddr_Dhl = ; // TODO
+  wire rf_wen_Dhl         = cs[6]; // TODO (done) same as bf
+  wire [4:0] rf_waddr_Dhl = cs[5:1]; // TODO (done) same as bf
 
   // CSR register write enable
 
@@ -480,7 +502,7 @@ module riscv_CoreCtrl
 
   // Squash instruction in D if a valid branch in X is taken
 
-  wire squash_Dhl = ; // TODO
+  wire squash_Dhl = brj_taken_Xhl && inst_val_Xhl; // TODO (done) Branch has been taken && EX instruciton is valid
 
   // Stall in D if muldiv unit is not ready and there is a valid request
 
@@ -489,11 +511,28 @@ module riscv_CoreCtrl
   // Stall for data hazards if either of the operand read addresses are
   // the same as the write addresses of instruction later in the pipeline
 
-  wire stall_hazard_Dhl   = ; // TODO
+  // True when X holds a load that will write rd
+  wire load_in_X =
+      inst_val_Xhl            &&   // real instr in X
+      dmemreq_val_Xhl         &&   // it accesses memory
+      !dmemreq_msg_rw_Xhl;         // rw==0  maens "load"
+
+  // RAW load-use hazard
+  wire rs1_hazard =
+      rs1_en_Dhl                     && // Use the address rs1
+      (rs1_addr_Dhl == rf_waddr_Xhl) && // The addresses are the same
+      rf_wen_Xhl;                       // Write enabled
+
+  wire rs2_hazard =
+      rs2_en_Dhl                     &&
+      (rs2_addr_Dhl == rf_waddr_Xhl) &&
+      rf_wen_Xhl;
+
+  wire stall_hazard_Dhl = load_in_X && (rs1_hazard || rs2_hazard); // TODO (done) checked: 1. Load and 2. Same addresses either rs1 or rs2
 
   // Aggregate Stall Signal
 
-  assign stall_Dhl = ; // TODO
+  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl; // TODO (done) muldiv is busy OR there is a load-use hazard 
 
   // Next bubble bit
 
@@ -556,7 +595,7 @@ module riscv_CoreCtrl
 
   // Is the current stage valid?
 
-  wire inst_val_Xhl = ; // TODO
+  wire inst_val_Xhl = !bubble_Xhl; // TODO (done) Use the "bubble bit"
 
   // Muldiv request
 
@@ -571,7 +610,14 @@ module riscv_CoreCtrl
 
   // Resolve Branch
 
-  wire brj_taken_Xhl = ; // TODO
+  // Signals come from the datapath, were comparisons are made
+  wire brj_taken_Xhl =  // TODO (done) same as the single cycle cuz here is where the actual comparisons are done
+    (br_sel_Xhl == br_beq  && branch_cond_eq_Xhl)  ||
+    (br_sel_Xhl == br_bne  && branch_cond_ne_Xhl)  ||
+    (br_sel_Xhl == br_blt  && branch_cond_lt_Xhl)  ||
+    (br_sel_Xhl == br_bltu && branch_cond_ltu_Xhl) ||
+    (br_sel_Xhl == br_bge  && branch_cond_ge_Xhl)  ||
+    (br_sel_Xhl == br_bgeu && branch_cond_geu_Xhl);
 
   // Dummy Squash Signal
 
@@ -591,7 +637,11 @@ module riscv_CoreCtrl
 
   // Aggregate Stall Signal
 
-  assign stall_Xhl = ; // TODO
+  // check stall on important compontents: imem, dmem or muldiv
+  assign stall_Xhl =  // TODO (done) 
+        stall_muldiv_Xhl      // waiting for mul/div response
+     || stall_imem_Xhl        // I-cache not ready
+     || stall_dmem_Xhl;       // D-cache not ready
 
   // Next bubble bit
 
@@ -639,7 +689,7 @@ module riscv_CoreCtrl
 
   // Is current stage valid?
 
-  wire inst_val_Mhl = ; // TODO
+  wire inst_val_Mhl = !bubble_Mhl; // TODO (done)
 
   // Data memory queue control signals
 
@@ -658,7 +708,9 @@ module riscv_CoreCtrl
 
   // Aggregate Stall Signal
 
-  assign stall_Mhl = ; // TODO
+  assign stall_Mhl =  // TODO (done)
+        stall_dmem_Mhl        // waiting for load/store data
+     || stall_imem_Mhl;       // front-end miss 
 
   // Next bubble bit
 
@@ -702,11 +754,11 @@ module riscv_CoreCtrl
 
   // Is current stage valid?
 
-  wire inst_val_Whl = ; // TODO
+  wire inst_val_Whl = !bubble_Whl; // TODO (Done)
 
   // Only set register file wen if stage is valid
 
-  assign rf_wen_out_Whl = ; // TODO
+  assign rf_wen_out_Whl = rf_wen_Whl && inst_val_Whl; // TODO (done)
 
   // Dummy squahs and stall signals
 

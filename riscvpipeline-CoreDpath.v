@@ -196,6 +196,10 @@ module riscv_CoreDpath
 
   wire [31:0] reset_vector = 32'h00080000;
 
+  //Note: pc-plus4_Phl is unsassigned. We need to find the signal to assign a value to it
+
+  assign pc_plus4_Phl = pc_Fhl + 32'd4; // But pc_Fhl is from previous cycle.
+  
   // Pull mux inputs from later stages
 
   assign pc_mux_out_Phl =     // TODO (Done) SHould be the same as last time
@@ -289,7 +293,7 @@ module riscv_CoreDpath
 
   // For a first try, directly grab the output from rf_dataX-Dhl
   wire [31:0] rs1_val_D = rf_rdata0_Dhl;
-  wire [31:0] rs2_val_D = rf_rdata1_Dhl;;
+  wire [31:0] rs2_val_D = rf_rdata1_Dhl;
 
   wire [31:0] op0_mux_out_Dhl =  // TODO (Done)  similar to single-cycle but check for "most recent value"
     (op0_mux_sel_Dhl == am_rdat)  ? rs1_val_D:     // Use correct value, avoid using old regsiter value
@@ -326,7 +330,7 @@ module riscv_CoreDpath
   always @ (posedge clk) begin
     if( !stall_Xhl ) begin
       pc_Xhl          <= pc_Dhl;
-      branch_targ_Xhl <= branch_targ_Dhl;
+      //branch_targ_Xhl <= branch_targ_Dhl;
       op0_mux_out_Xhl <= op0_mux_out_Dhl;
       op1_mux_out_Xhl <= op1_mux_out_Dhl;
       wdata_Xhl       <= wdata_Dhl;

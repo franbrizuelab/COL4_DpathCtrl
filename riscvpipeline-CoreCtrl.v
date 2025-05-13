@@ -490,7 +490,7 @@ module riscv_CoreCtrl
 
   // CSR register write enable
 
-  wire csr_wen_Dhl = ( ir_Dhl == `RISCV_INST_MSG_CSRW );
+  wire csr_wen_Dhl = cs[`RISCV_INST_MSG_CSR_WEN];
 
   // CSR register address
 

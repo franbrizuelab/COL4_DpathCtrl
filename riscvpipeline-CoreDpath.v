@@ -198,7 +198,9 @@ module riscv_CoreDpath
 
   //Note: pc-plus4_Phl is unsassigned. We need to find the signal to assign a value to it
 
-  assign pc_plus4_Phl = pc_Fhl + 32'd4; // But pc_Fhl is from previous cycle.
+  assign pc_plus4_Phl =
+    (pc_Fhl == 32'bx) ?  reset_vector:
+    pc_Fhl + 32'd4;
   
   // Pull mux inputs from later stages
 

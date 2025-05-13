@@ -287,13 +287,28 @@ module riscv_CoreDpath
 
   // Operand 0 mux
 
-  wire [31:0] op0_mux_out_Dhl =  // TODOO
+  // For a first try, directly grab the output from rf_dataX-Dhl
+  wire [31:0] rs1_val_D = rf_rdata0_Dhl;
+  wire [31:0] rs2_val_D = rf_rdata1_Dhl;;
 
-
+  wire [31:0] op0_mux_out_Dhl =  // TODO (Done)  similar to single-cycle but check for "most recent value"
+    (op0_mux_sel_Dhl == am_rdat)  ? rs1_val_D:     // Use correct value, avoid using old regsiter value
+    (op0_mux_sel_Dhl == am_pc)    ? pc_Dhl :            // PC
+    (op0_mux_sel_Dhl == am_pc4)   ? pc_plus4_Dhl :      // PC + 4
+    (op0_mux_sel_Dhl == am_0)     ? 32'd0 :         // 0 Constant
+    reset_vector;  // jump to reset vector, prevents fetching garbage 
   // Operand 1 mux
 
-  wire [31:0] op1_mux_out_Dhl =  // TODOO
-
+  wire [31:0] op1_mux_out_Dhl =  // TODO (Done) pretty much the same as op0
+    (op1_mux_sel_Dhl == bm_rdat)    ? rs2_val_D:      // Use correct value, avoid using old regsiter value
+    (op1_mux_sel_Dhl == bm_shamt)   ? shamt_Dhl :     // Extended 5 bits imm
+    (op1_mux_sel_Dhl == bm_imm_u)   ? imm_u_Dhl :
+    (op1_mux_sel_Dhl == bm_imm_sb)  ? imm_sb_Dhl :
+    (op1_mux_sel_Dhl == bm_imm_i)   ? imm_i_Dhl :
+    (op1_mux_sel_Dhl == bm_imm_s)   ? imm_s_Dhl :
+    (op1_mux_sel_Dhl == bm_0  )       ? 32'd0 :
+    reset_vector;  // jump to reset vector, prevents fetching garbage 
+    
   // wdata with bypassing
 
   wire [31:0] wdata_Dhl = rf_rdata1_Dhl;

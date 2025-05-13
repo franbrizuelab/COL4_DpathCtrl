@@ -58,6 +58,9 @@ module riscv_CoreCtrl
   //output [4:0]  rf_waddr_Mhl,
   //output [31:0] execute_mux_out_Mhl,
   
+  // DISCLAIMER: Connections to handle branching info between stages
+  output brj_taken_Xhl,
+
   // Control Signals (dpath->ctrl)
 
   input         branch_cond_eq_Xhl,
@@ -71,6 +74,8 @@ module riscv_CoreCtrl
   // CSR Status
 
   output reg [31:0] csr_status
+
+
 );
 
 //----------------------------------------------------------------------

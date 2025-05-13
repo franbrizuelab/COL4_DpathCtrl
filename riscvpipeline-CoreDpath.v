@@ -55,7 +55,9 @@ module riscv_CoreDpath
   //input        rf_wen_Mhl,
   //input [4:0]  rf_waddr_Mhl,
   //input [31:0] execute_mux_out_Mhl,
-  
+
+  // DISCLAIMER: Connections to handle branching info between stages
+  input brj_taken_Xhl,
 
   // Control Signals (dpath->ctrl)
 
@@ -192,6 +194,7 @@ module riscv_CoreDpath
 //wire [31:0] pc_plus4_Phl;
   reg [31:0] pc_plus4_Phl;
 
+  reg branch_taken_Phl;
 
   wire [31:0] branch_targ_Phl;
   wire [31:0] jump_targ_Phl;
@@ -207,9 +210,16 @@ module riscv_CoreDpath
   always @ (posedge clk) begin
     if( reset ) begin
       pc_plus4_Phl <= reset_vector;
+      brj_taken_Phl <= reset_vector;
+
+      branch_taken_Phl <= 1'b0;
+
     end
-    else if( !stall_Fhl ) begin
+    else  begin                       // WARNING: Check this later
       pc_plus4_Phl <= pc_plus4_value;
+      branch_targ_Phl <= branch_targ_Xhl;
+
+      brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; 
     end
   end
 
@@ -217,9 +227,9 @@ module riscv_CoreDpath
   
   // Pull mux inputs from later stages
 
-  assign pc_mux_out_Phl =     // TODO (Done) SHould be the same as last time
+  assign pc_mux_out_Phl =     // TODO (Done) Branching is a litlle more complex, we may do a "misprediction"
     (pc_mux_sel_Phl == pm_p) ? pc_plus4_Phl :
-    (pc_mux_sel_Phl == pm_b) ? branch_targ_Phl :
+    (pc_mux_sel_Phl == pm_b && brj_taken_Xhl) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
     (pc_mux_sel_Phl == pm_j) ? jump_targ_Phl :
     (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
     reset_vector;  // jump to reset vector, prevents fetching garbage
@@ -229,6 +239,7 @@ module riscv_CoreDpath
   assign imemreq_msg_addr
     = ( reset ) ? reset_vector
     :             pc_mux_out_Phl;
+
 
 //----------------------------------------------------------------------
 // F <- P
@@ -295,6 +306,7 @@ module riscv_CoreDpath
   wire [ 4:0] rf_raddr1_Dhl = inst_rs2_Dhl;
   wire [31:0] rf_rdata1_Dhl;
 
+
   // Shift amount immediate
 
   wire [31:0] shamt_Dhl = {27'b0, inst_shamt_Dhl}; // TODO (Done) extend the original 5 bits
@@ -332,6 +344,19 @@ module riscv_CoreDpath
 
   wire [31:0] wdata_Dhl = rf_rdata1_Dhl;
 
+  // DISCLAIMER: declaration of missing reg branch_targ_Dhl
+  reg [31:0] branch_targ_Dhl;
+
+  always @(posedge clk) begin
+    if ( reset ) begin
+      branch_targ_Dhl    <= 32'b0;
+    end
+    else if ( !stall_Dhl ) begin
+      // Compute the static target PC = PC+D + imm_sb
+      branch_targ_Dhl  <= pc_Dhl + imm_sb;
+    end
+  end
+
 //----------------------------------------------------------------------
 // X <- D
 //----------------------------------------------------------------------
@@ -345,7 +370,7 @@ module riscv_CoreDpath
   always @ (posedge clk) begin
     if( !stall_Xhl ) begin
       pc_Xhl          <= pc_Dhl;
-      //branch_targ_Xhl <= branch_targ_Dhl;
+      branch_targ_Xhl <= branch_targ_Dhl;
       op0_mux_out_Xhl <= op0_mux_out_Dhl;
       op1_mux_out_Xhl <= op1_mux_out_Dhl;
       wdata_Xhl       <= wdata_Dhl;

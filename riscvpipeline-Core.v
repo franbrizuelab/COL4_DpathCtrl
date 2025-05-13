@@ -89,6 +89,9 @@ module riscv_Core
   //wire [4:0]  rf_waddr_Mhl;
   //wire [31:0] execute_mux_out_Mhl;
 
+  // DISCLAIMER: Connections to handle branching info between stages
+  wire brj_taken_Xhl;
+
   //----------------------------------------------------------------------
   // Pack Memory Request Messages
   //----------------------------------------------------------------------

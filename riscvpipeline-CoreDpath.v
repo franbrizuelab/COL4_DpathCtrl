@@ -194,7 +194,7 @@ module riscv_CoreDpath
 //wire [31:0] pc_plus4_Phl;
   reg [31:0] pc_plus4_Phl;
 
-  reg branch_taken_Phl;
+  reg brj_taken_Phl;
 
   wire [31:0] branch_targ_Phl;
   wire [31:0] jump_targ_Phl;

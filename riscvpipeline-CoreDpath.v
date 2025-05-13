@@ -188,7 +188,11 @@ module riscv_CoreDpath
 
   // PC mux
 
-  wire [31:0] pc_plus4_Phl;
+  // DISCLAIMER: Changed the pc_plus4_Phl from wire to reg
+//wire [31:0] pc_plus4_Phl;
+  reg [31:0] pc_plus4_Phl;
+
+
   wire [31:0] branch_targ_Phl;
   wire [31:0] jump_targ_Phl;
   wire [31:0] jumpreg_targ_Phl;
@@ -198,11 +202,9 @@ module riscv_CoreDpath
 
   //Note: pc-plus4_Phl is unsassigned. We need to find the signal to assign a value to it
 
-  assign pc_plus4_value =
-    (pc_Fhl == 32'bx) ?  reset_vector:
-    pc_Fhl + 32'd4;
+  wire [31:0] pc_plus4_value = pc_Fhl + 32'd4;
 
-    always @ (posedge clk) begin
+  always @ (posedge clk) begin
     if( reset ) begin
       pc_plus4_Phl <= reset_vector;
     end

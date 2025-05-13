@@ -52,9 +52,9 @@ module riscv_CoreDpath
   input         stall_Whl,
 
   // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-  input        rf_wen_Mhl,
-  input [4:0]  rf_waddr_Mhl,
-  input [31:0] execute_mux_out_Mhl,
+  //input        rf_wen_Mhl,
+  //input [4:0]  rf_waddr_Mhl,
+  //input [31:0] execute_mux_out_Mhl,
   
 
   // Control Signals (dpath->ctrl)
@@ -241,7 +241,7 @@ module riscv_CoreDpath
 //----------------------------------------------------------------------
   
   // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-  reg [4:0] rs1_Xhl, rs2_Xhl;
+  //reg [4:0] rs1_Xhl, rs2_Xhl;
 
   reg [31:0] pc_Dhl;
   reg [31:0] pc_plus4_Dhl;
@@ -285,56 +285,15 @@ module riscv_CoreDpath
   wire [31:0] const0    = 32'd0;
 
 
-
-
-  // FORWARDING :D
-  // Forwarding for rs1
-  wire [1:0] forward_rs1_sel =
-      (rf_wen_Mhl && (rf_waddr_Mhl != 0) && (rf_waddr_Mhl == rs1_Xhl)) ? 2'b01 :
-      (rf_wen_Whl && (rf_waddr_Whl != 0) && (rf_waddr_Whl == rs1_Xhl)) ? 2'b10 :
-      2'b00;
-
-  // Forwarding for rs2
-  wire [1:0] forward_rs2_sel =
-      (rf_wen_Mhl && (rf_waddr_Mhl != 0) && (rf_waddr_Mhl == rs2_Xhl)) ? 2'b01 :
-      (rf_wen_Whl && (rf_waddr_Whl != 0) && (rf_waddr_Whl == rs2_Xhl)) ? 2'b10 :
-      2'b00;
-
-  // Assume these come from register file and are pipelined from D stage
-  wire [31:0] rs1_val_default = op0_mux_out_Xhl; // already selected from operand mux
-  wire [31:0] rs2_val_default = op1_mux_out_Xhl; // already selected from operand mux
-
-  wire [31:0] rs1_val = (forward_rs1_sel == 2'b01) ? execute_mux_out_Mhl :
-                        (forward_rs1_sel == 2'b10) ? wb_mux_out_Whl :
-                        rs1_val_default;
-
-  wire [31:0] rs2_val = (forward_rs2_sel == 2'b01) ? execute_mux_out_Mhl :
-                        (forward_rs2_sel == 2'b10) ? wb_mux_out_Whl :
-                        rs2_val_default;
-
   // Operand 0 mux
 
-  wire [31:0] op0_mux_out_Dhl =  // TODO (Done)  similar to single-cycle but check for "most recent value"
-    (op0_mux_sel_Dhl == am_rdat)  ? rs1_val:     // Use correct value, avoid using old regsiter value
-    (op0_mux_sel_Dhl == am_pc)    ? pc_Dhl :            // PC
-    (op0_mux_sel_Dhl == am_pc4)   ? pc_plus4_Dhl :      // PC + 4
-    (op0_mux_sel_Dhl == am_0)     ? 32'd0 :         // 0 Constant
-    reset_vector;  // jump to reset vector, prevents fetching garbage 
+  wire [31:0] op0_mux_out_Dhl =  // TODOO
 
 
   // Operand 1 mux
 
-  wire [31:0] op1_mux_out_Dhl =  // TODO (Done) pretty much the same as op0
-    (op1_mux_sel_Dhl == bm_rdat)    ? rs2_val_D:      // Use correct value, avoid using old regsiter value
-    (op1_mux_sel_Dhl == bm_shamt)   ? shamt_Dhl :     // Extended 5 bits imm
-    (op1_mux_sel_Dhl == bm_imm_u)   ? imm_u_Dhl :
-    (op1_mux_sel_Dhl == bm_imm_sb)  ? imm_sb_Dhl :
-    (op1_mux_sel_Dhl == bm_imm_i)   ? imm_i_Dhl :
-    (op1_mux_sel_Dhl == bm_imm_s)   ? imm_s_Dhl :
-    (op1_mux_sel_Dhl == bm_0  )       ? 32'd0 :
-    reset_vector;  // jump to reset vector, prevents fetching garbage 
+  wire [31:0] op1_mux_out_Dhl =  // TODOO
 
-    
   // wdata with bypassing
 
   wire [31:0] wdata_Dhl = rf_rdata1_Dhl;
@@ -358,8 +317,8 @@ module riscv_CoreDpath
       wdata_Xhl       <= wdata_Dhl;
 
       // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-      rs1_Xhl <= inst_rs1_Dhl;    // from your InstMsg parser
-      rs2_Xhl <= inst_rs2_Dhl;
+      //rs1_Xhl <= inst_rs1_Dhl;    // from your InstMsg parser
+      //rs2_Xhl <= inst_rs2_Dhl;
     end
   end
 

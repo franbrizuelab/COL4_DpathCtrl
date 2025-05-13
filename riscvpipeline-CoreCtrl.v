@@ -54,9 +54,9 @@ module riscv_CoreCtrl
   output            stall_Whl,
 
   // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-  output        rf_wen_Mhl,
-  output [4:0]  rf_waddr_Mhl,
-  output [31:0] execute_mux_out_Mhl,
+  //output        rf_wen_Mhl,
+  //output [4:0]  rf_waddr_Mhl,
+  //output [31:0] execute_mux_out_Mhl,
   
   // Control Signals (dpath->ctrl)
 

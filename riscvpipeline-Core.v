@@ -200,6 +200,9 @@ module riscv_Core
     //.rf_waddr_Mhl         (rf_waddr_Mhl),
     //.execute_mux_out_Mhl  (execute_mux_out_Mhl),
 
+  // DISCLAIMER: Connections to handle branching info between stages
+    .brj_taken_Xhl          (brj_taken_Xhl),
+
     // CSR Status
 
     .csr_status             (csr_status)
@@ -249,6 +252,9 @@ module riscv_Core
     .stall_Xhl               (stall_Xhl),
     .stall_Mhl               (stall_Mhl),
     .stall_Whl               (stall_Whl),
+
+  // DISCLAIMER: Connections to handle branching info between stages
+    .brj_taken_Xhl          (brj_taken_Xhl),
 
     // Control Signals (dpath->ctrl)
 

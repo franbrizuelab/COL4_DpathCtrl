@@ -195,8 +195,8 @@ module riscv_CoreDpath
   reg [31:0] pc_plus4_Phl;
 
   reg brj_taken_Phl;
-
-  wire [31:0] branch_targ_Phl;
+//wire [31:0] branch_targ_Phl;
+  reg [31:0] branch_targ_Phl;
   wire [31:0] jump_targ_Phl;
   wire [31:0] jumpreg_targ_Phl;
   wire [31:0] pc_mux_out_Phl;
@@ -212,7 +212,7 @@ module riscv_CoreDpath
       pc_plus4_Phl <= reset_vector;
       brj_taken_Phl <= reset_vector;
 
-      branch_taken_Phl <= 1'b0;
+      brj_taken_Phl <= 1'b0;
 
     end
     else  begin                       // WARNING: Check this later
@@ -310,6 +310,7 @@ module riscv_CoreDpath
   // Shift amount immediate
 
   wire [31:0] shamt_Dhl = {27'b0, inst_shamt_Dhl}; // TODO (Done) extend the original 5 bits
+  wire [31:0] sb_shamt =  {27'b0, imm_sb_Dhl};
 
   // Constant operand mux inputs
 
@@ -353,7 +354,7 @@ module riscv_CoreDpath
     end
     else if ( !stall_Dhl ) begin
       // Compute the static target PC = PC+D + imm_sb
-      branch_targ_Dhl  <= pc_Dhl + imm_sb;
+      branch_targ_Dhl  <= pc_Dhl + sb_shamt; // Add the PC + exended shift amount
     end
   end
 

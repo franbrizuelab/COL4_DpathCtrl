@@ -132,7 +132,7 @@ module riscv_CoreCtrl
 
   // Stall in F if D is stalled
 
-  assign stall_Fhl = ; // TODO
+  assign stall_Fhl = stall_Dhl; // TODO
 
   // Next bubble bit
 

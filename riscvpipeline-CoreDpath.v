@@ -210,12 +210,12 @@ module riscv_CoreDpath
   always @ (posedge clk) begin
     if( reset ) begin
       pc_plus4_Phl <= reset_vector;
-      brj_taken_Phl <= reset_vector;
+      brj_taken_Phl <= 1'b0;
 
       brj_taken_Phl <= 1'b0;
 
     end
-    else  begin                       // WARNING: Check this later
+    else if( !stall_Fhl ) begin                       // WARNING: Check this later --- WARNING 2: Changed it to work onlt if F not stalled
       pc_plus4_Phl <= pc_plus4_value;
       branch_targ_Phl <= branch_targ_Xhl;
 
@@ -223,13 +223,11 @@ module riscv_CoreDpath
     end
   end
 
-
-  
   // Pull mux inputs from later stages
 
   assign pc_mux_out_Phl =     // TODO (Done) Branching is a litlle more complex, we may do a "misprediction"
     (pc_mux_sel_Phl == pm_p) ? pc_plus4_Phl :
-    (pc_mux_sel_Phl == pm_b && brj_taken_Xhl) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
+    (pc_mux_sel_Phl == pm_b && brj_taken_Phl) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
     (pc_mux_sel_Phl == pm_j) ? jump_targ_Phl :
     (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
     reset_vector;  // jump to reset vector, prevents fetching garbage

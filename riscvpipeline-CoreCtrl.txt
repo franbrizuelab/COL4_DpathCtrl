@@ -1,7 +1,7 @@
 
-//=========================================================================
-// 5-Stage RISCV-minimal Control Unit
-//=========================================================================
+
+
+
 
 `ifndef RISCV_CORE_CTRL_V
 `define RISCV_CORE_CTRL_V
@@ -13,13 +13,13 @@ module riscv_CoreCtrl
   input clk,
   input reset,
 
-  // Instruction Memory Port
+  
   output        imemreq_val,
   input         imemreq_rdy,
   input  [31:0] imemresp_msg_data,
   input         imemresp_val,
 
-  // Data Memory Port
+  
 
   output        dmemreq_msg_rw,
   output  [1:0] dmemreq_msg_len,
@@ -27,7 +27,7 @@ module riscv_CoreCtrl
   input         dmemreq_rdy,
   input         dmemresp_val,
 
-  // Controls Signals (ctrl->dpath)
+  
 
   output     [ 1:0] pc_mux_sel_Phl,
   output     [ 1:0] op0_mux_sel_Dhl,
@@ -53,15 +53,15 @@ module riscv_CoreCtrl
   output            stall_Mhl,
   output            stall_Whl,
 
-  // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-  //output        rf_wen_Mhl,
-  //output [4:0]  rf_waddr_Mhl,
-  //output [31:0] execute_mux_out_Mhl,
   
-  // DISCLAIMER: Connections to handle branching info between stages
+  
+  
+  
+  
+  
   output brj_taken_Xhl,
 
-  // Control Signals (dpath->ctrl)
+  
 
   input         branch_cond_eq_Xhl,
   input         branch_cond_ne_Xhl,
@@ -71,48 +71,48 @@ module riscv_CoreCtrl
   input         branch_cond_geu_Xhl,
   input  [31:0] proc2csr_data_Whl,
 
-  // CSR Status
+  
 
   output reg [31:0] csr_status
 
 
 );
 
-//----------------------------------------------------------------------
-// PC Stage: Instruction Memory Request
-//----------------------------------------------------------------------
 
-  // PC Mux Select
 
-  assign pc_mux_sel_Phl = pc_mux_sel_Dhl; // TODO (done)
 
-  // Only send a valid imem request if not stalle
+
+  
+
+  assign pc_mux_sel_Phl = pc_mux_sel_Dhl; 
+
+  
 
   wire   imemreq_val_Phl = reset || !stall_Phl;
   assign imemreq_val     = imemreq_val_Phl;
 
-  // Dummy Squash Signal
+  
 
   wire squash_Phl = 1'b0;
 
-  // Stall in PC if F is stalled
+  
 
   wire stall_Phl = stall_Fhl;
 
-  // Next bubble bit
+  
 
   wire bubble_next_Phl = ( squash_Phl || stall_Phl );
 
-//----------------------------------------------------------------------
-// F <- P
-//----------------------------------------------------------------------
+
+
+
 
   reg imemreq_val_Fhl;
 
   reg bubble_Fhl;
 
   always @ ( posedge clk ) begin
-    // Only pipeline the bubble bit if the next stage is not stalled
+    
     if ( reset ) begin
       bubble_Fhl <= 1'b0;
     end
@@ -122,33 +122,33 @@ module riscv_CoreCtrl
     imemreq_val_Fhl <= imemreq_val_Phl;
   end
 
-//----------------------------------------------------------------------
-// Fetch Stage: Instruction Memory Response
-//----------------------------------------------------------------------
 
-  // Is the current stage valid?
 
-  wire inst_val_Fhl = !bubble_Fhl; // TODO (done) Use the "bubble bit"
 
-  // Squash instruction in F stage if branch taken for a valid
-  // instruction or if there was an exception in X stage
 
-  wire squash_Fhl = brj_taken_Xhl && inst_val_Xhl; // TODO (done)
+  
 
-  // Stall in F if D is stalled
+  wire inst_val_Fhl = !bubble_Fhl; 
 
-  assign stall_Fhl = stall_Dhl; // TODO
+  
+  
 
-  // Next bubble bit
+  wire squash_Fhl = brj_taken_Xhl && inst_val_Xhl; 
+
+  
+
+  assign stall_Fhl = stall_Dhl; 
+
+  
 
   wire bubble_sel_Fhl  = ( squash_Fhl || stall_Fhl );
   wire bubble_next_Fhl = ( !bubble_sel_Fhl ) ? bubble_Fhl
                        : ( bubble_sel_Fhl )  ? 1'b1
                        :                       1'bx;
 
-//----------------------------------------------------------------------
-// Queue for instruction memory response
-//----------------------------------------------------------------------
+
+
+
 
   wire imemresp_queue_en_Fhl = ( stall_Dhl && imemresp_val );
   wire imemresp_queue_val_next_Fhl
@@ -164,18 +164,18 @@ module riscv_CoreCtrl
     imemresp_queue_val_Fhl <= imemresp_queue_val_next_Fhl;
   end
 
-//----------------------------------------------------------------------
-// Instruction memory queue mux
-//----------------------------------------------------------------------
+
+
+
 
   wire [31:0] imemresp_queue_mux_out_Fhl
     = ( !imemresp_queue_val_Fhl ) ? imemresp_msg_data
     : ( imemresp_queue_val_Fhl )  ? imemresp_queue_reg_Fhl
     :                               32'bx;
 
-//----------------------------------------------------------------------
-// D <- F
-//----------------------------------------------------------------------
+
+
+
 
   reg [31:0] ir_Dhl;
   reg        bubble_Dhl;
@@ -190,21 +190,21 @@ module riscv_CoreCtrl
     end
   end
 
-//----------------------------------------------------------------------
-// Decode Stage: Constants
-//----------------------------------------------------------------------
 
-  // Generic Parameters
+
+
+
+  
 
   localparam n = 1'd0;
   localparam y = 1'd1;
 
-  // Register specifiers
+  
 
   localparam rx = 5'bx;
   localparam r0 = 5'd0;
 
-  // Branch Type
+  
 
   localparam br_x    = 3'bx;
   localparam br_none = 3'd0;
@@ -215,34 +215,34 @@ module riscv_CoreCtrl
   localparam br_bge  = 3'd5;
   localparam br_bgeu = 3'd6;
 
-  // PC Mux Select
+  
 
-  localparam pm_x   = 2'bx;  // Don't care
-  localparam pm_p   = 2'd0;  // Use pc+4
-  localparam pm_b   = 2'd1;  // Use branch address
-  localparam pm_j   = 2'd2;  // Use jump address
-  localparam pm_r   = 2'd3;  // Use jump register
+  localparam pm_x   = 2'bx;  
+  localparam pm_p   = 2'd0;  
+  localparam pm_b   = 2'd1;  
+  localparam pm_j   = 2'd2;  
+  localparam pm_r   = 2'd3;  
 
-  // Operand 0 Mux Select
+  
 
   localparam am_x     = 2'bx;
-  localparam am_rdat  = 2'd0; // Use output of bypass mux for rs1
-  localparam am_pc    = 2'd1; // Use current PC
-  localparam am_pc4   = 2'd2; // Use PC + 4
-  localparam am_0     = 2'd3; // Use constant 0
+  localparam am_rdat  = 2'd0; 
+  localparam am_pc    = 2'd1; 
+  localparam am_pc4   = 2'd2; 
+  localparam am_0     = 2'd3; 
 
-  // Operand 1 Mux Select
+  
 
-  localparam bm_x      = 3'bx; // Don't care
-  localparam bm_rdat   = 3'd0; // Use output of bypass mux for rs2
-  localparam bm_shamt  = 3'd1; // Use shift amount
-  localparam bm_imm_u  = 3'd2; // Use U-type immediate
-  localparam bm_imm_sb = 3'd3; // Use SB-type immediate
-  localparam bm_imm_i  = 3'd4; // Use I-type immediate
-  localparam bm_imm_s  = 3'd5; // Use S-type immediate
-  localparam bm_0      = 3'd6; // Use constant 0
+  localparam bm_x      = 3'bx; 
+  localparam bm_rdat   = 3'd0; 
+  localparam bm_shamt  = 3'd1; 
+  localparam bm_imm_u  = 3'd2; 
+  localparam bm_imm_sb = 3'd3; 
+  localparam bm_imm_i  = 3'd4; 
+  localparam bm_imm_s  = 3'd5; 
+  localparam bm_0      = 3'd6; 
 
-  // ALU Function
+  
 
   localparam alu_x    = 4'bx;
   localparam alu_add  = 4'd0;
@@ -257,7 +257,7 @@ module riscv_CoreCtrl
   localparam alu_srl  = 4'd9;
   localparam alu_sra  = 4'd10;
 
-  // Muldiv Function
+  
 
   localparam md_x    = 3'bx;
   localparam md_mul  = 3'd0;
@@ -266,32 +266,32 @@ module riscv_CoreCtrl
   localparam md_rem  = 3'd3;
   localparam md_remu = 3'd4;
 
-  // MulDiv Mux Select
+  
 
-  localparam mdm_x = 1'bx; // Don't Care
-  localparam mdm_l = 1'd0; // Take lower half of 64-bit result, mul/div/divu
-  localparam mdm_u = 1'd1; // Take upper half of 64-bit result, rem/remu
+  localparam mdm_x = 1'bx; 
+  localparam mdm_l = 1'd0; 
+  localparam mdm_u = 1'd1; 
 
-  // Execute Mux Select
+  
 
-  localparam em_x   = 1'bx; // Don't Care
-  localparam em_alu = 1'd0; // Use ALU output
-  localparam em_md  = 1'd1; // Use muldiv output
+  localparam em_x   = 1'bx; 
+  localparam em_alu = 1'd0; 
+  localparam em_md  = 1'd1; 
 
-  // Memory Request Type
+  
 
-  localparam nr = 2'b0; // No request
-  localparam ld = 2'd1; // Load
-  localparam st = 2'd2; // Store
+  localparam nr = 2'b0; 
+  localparam ld = 2'd1; 
+  localparam st = 2'd2; 
 
-  // Subword Memop Length
+  
 
   localparam ml_x  = 2'bx;
   localparam ml_w  = 2'd0;
   localparam ml_b  = 2'd1;
   localparam ml_h  = 2'd2;
 
-  // Memory Response Mux Select
+  
 
   localparam dmm_x  = 3'bx;
   localparam dmm_w  = 3'd0;
@@ -300,25 +300,25 @@ module riscv_CoreCtrl
   localparam dmm_h  = 3'd3;
   localparam dmm_hu = 3'd4;
 
-  // Writeback Mux 1
+  
 
-  localparam wm_x   = 1'bx; // Don't care
-  localparam wm_alu = 1'd0; // Use ALU output
-  localparam wm_mem = 1'd1; // Use data memory response
+  localparam wm_x   = 1'bx; 
+  localparam wm_alu = 1'd0; 
+  localparam wm_mem = 1'd1; 
 
-//----------------------------------------------------------------------
-// Decode Stage: Logic
-//----------------------------------------------------------------------
 
-  // Is the current stage valid?
 
-  wire inst_val_Dhl = !bubble_Dhl; // TODO (done) Use the "bubble bit"
 
-  // Ship instruction for field parsing to datapath
+
+  
+
+  wire inst_val_Dhl = !bubble_Dhl; 
+
+  
 
   assign inst_Dhl = ir_Dhl;
 
-  // Parse instruction fields
+  
 
   wire   [4:0] inst_rs1_Dhl;
   wire   [4:0] inst_rs2_Dhl;
@@ -341,27 +341,27 @@ module riscv_CoreCtrl
     .imm_uj   ()
   );
 
-  // Shorten register specifier name for table
+  
 
   wire [4:0] rs1 = inst_rs1_Dhl;
   wire [4:0] rs2 = inst_rs2_Dhl;
   wire [4:0] rd  = inst_rd_Dhl;
 
-  // Instruction Decode
+  
 
   localparam cs_sz = 39;
   reg [cs_sz-1:0] cs;
 
   always @ (*) begin
 
-    cs = {cs_sz{1'bx}}; // Default to invalid instruction
+    cs = {cs_sz{1'bx}}; 
     
-    //DISCLAIMER: I just cpied the exact implemnetation here, later we'll see if it works. Since the most important part is the htandlijng fo hazards and the actual used components doesnt change, it should be safe enough to just copy it :p
+    
     
     casez ( ir_Dhl )
 
-      //                                j     br       pc      op0      rs1 op1       rs2 alu       md       md md     ex      mem  mem   memresp wb      rf  rf  csr
-      //                            val en    sel      muxsel  muxsel   en  muxsel    en  fn        fn       en muxsel muxsel  rwq  len   muxsel  muxsel  wen wa  wen
+      
+      
       `RISCV_INST_MSG_LUI     :cs={ y,  n,    br_none, pm_p,   am_0,    n,  bm_imm_u, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
       `RISCV_INST_MSG_AUIPC   :cs={ y,  n,    br_none, pm_p,   am_pc,   n,  bm_imm_u, n,  alu_add,  md_x,    n, mdm_x, em_alu, nr,  ml_x, dmm_x,  wm_alu, y,  rd, n };
  
@@ -419,136 +419,136 @@ module riscv_CoreCtrl
 
   end
 
-  // Jump and Branch Controls
-  // Tell the rest of the control-unit and PC‐mux whether the current instr. is a branch or jump, and which one it is
   
-  // Take the bits that define the branch
-  wire [2:0] br_sel_Dhl    = cs[36:34]; // TODO (done) according to the control message bits
+  
+  
+  
+  wire [2:0] br_sel_Dhl    = cs[36:34]; 
 
-  wire instr_is_jump_Dhl   = cs[37];     // 1 for JAL/JALR
+  wire instr_is_jump_Dhl   = cs[37];     
   wire instr_is_branch_Dhl = (br_sel_Dhl != br_none);
 
-  // Boolean to indicate whether a branch or jump has been taken
-  wire brj_taken_Dhl =                            // TODO (Done)
-        instr_is_jump_Dhl                         // JAL/JALR
-        || ( instr_is_branch_Dhl ? brj_taken_Xhl  // If current stage doesn't have a branch, check execute stage result (brj_taken_Xhl)
+  
+  wire brj_taken_Dhl =                            
+        instr_is_jump_Dhl                         
+        || ( instr_is_branch_Dhl ? brj_taken_Xhl  
         : 1'b0 );
 
-  // PC Mux Select
+  
 
-  wire [1:0] pc_mux_sel_Dhl = cs[33:32]; // TODO (done) according to the control message bits
+  wire [1:0] pc_mux_sel_Dhl = cs[33:32]; 
 
-  // Operand RF Read Addresses and Enables (using rs or rt?)
+  
 
   wire [4:0] rs1_addr_Dhl   = inst_rs1_Dhl;
   wire [4:0] rs2_addr_Dhl   = inst_rs2_Dhl;
 
-  wire       rs1_en_Dhl     = cs[29]; // TODO (done) what comes after op0_muxsel
-  wire       rs2_en_Dhl     = cs[25]; // TODO (done) what comes after op1_muxsel
+  wire       rs1_en_Dhl     = cs[29]; 
+  wire       rs2_en_Dhl     = cs[25]; 
 
-  // Operand Mux Select
+  
 
-  assign op0_mux_sel_Dhl = cs[31:30]; // TODO (done) as bf 
-  assign op1_mux_sel_Dhl = cs[28:26]; // TODO (done) as bf
+  assign op0_mux_sel_Dhl = cs[31:30]; 
+  assign op1_mux_sel_Dhl = cs[28:26]; 
 
-  // ALU Function
+  
 
-  wire [3:0] alu_fn_Dhl = cs[24:21]; // TODO (done) as bf
+  wire [3:0] alu_fn_Dhl = cs[24:21]; 
 
-  // Muldiv Function
+  
 
-  wire [2:0] muldivreq_msg_fn_Dhl = cs[20:18]; // TODO (done) as BF
+  wire [2:0] muldivreq_msg_fn_Dhl = cs[20:18]; 
 
-  // Muldiv Controls
+  
 
-  //Bit that specifies whether there is a muldiv unit request
-  wire muldivreq_val_Dhl = cs[17]; // TODO (Done) bit that goeas after 'muldivreq_msg_fn_Dhl'
+  
+  wire muldivreq_val_Dhl = cs[17]; 
 
-  // Muldiv Mux Select
+  
 
-  // Take upper part of muldiv result or lower part?
-  wire muldiv_mux_sel_Dhl = cs[16]; // TODO (done)
+  
+  wire muldiv_mux_sel_Dhl = cs[16]; 
 
-  // Execute Mux Select
+  
 
 
-  wire execute_mux_sel_Dhl = cs[15]; // TODO (Done) meh
+  wire execute_mux_sel_Dhl = cs[15]; 
 
-  // Memory Controls
+  
 
-  wire       dmemreq_msg_rw_Dhl  = cs[14:13]; // TODO (done) 2 bits for 3 states
-  wire [1:0] dmemreq_msg_len_Dhl = cs[12:11]; // TODO (done) same
+  wire       dmemreq_msg_rw_Dhl  = cs[14:13]; 
+  wire [1:0] dmemreq_msg_len_Dhl = cs[12:11]; 
   wire       dmemreq_val_Dhl     = ( cs[`RISCV_INST_MSG_MEM_REQ] != nr );
 
-  // Memory response mux select
+  
 
-  wire [2:0] dmemresp_mux_sel_Dhl = cs[10:8]; // TODO (done) same as bf
+  wire [2:0] dmemresp_mux_sel_Dhl = cs[10:8]; 
 
-  // Writeback Mux Select
+  
 
-  wire wb_mux_sel_Dhl = cs[7]; // TODO (done) same as bf
+  wire wb_mux_sel_Dhl = cs[7]; 
 
-  // Register Writeback Controls
+  
 
-  wire rf_wen_Dhl         = cs[6]; // TODO (done) same as bf
-  wire [4:0] rf_waddr_Dhl = cs[5:1]; // TODO (done) same as bf
+  wire rf_wen_Dhl         = cs[6]; 
+  wire [4:0] rf_waddr_Dhl = cs[5:1]; 
 
-  // CSR register write enable
+  
 
   wire csr_wen_Dhl = cs[`RISCV_INST_MSG_CSR_WEN];
 
-  // CSR register address
+  
 
   wire [11:0] csr_addr_Dhl  = ir_Dhl[31:20];
 
-//----------------------------------------------------------------------
-// Squash and Stall Logic
-//----------------------------------------------------------------------
 
-  // Squash instruction in D if a valid branch in X is taken
 
-  wire squash_Dhl = brj_taken_Xhl && inst_val_Xhl; // TODO (done) Branch has been taken && EX instruciton is valid
 
-  // Stall in D if muldiv unit is not ready and there is a valid request
+
+  
+
+  wire squash_Dhl = brj_taken_Xhl && inst_val_Xhl; 
+
+  
 
   wire stall_muldiv_Dhl = ( muldivreq_val_Dhl && inst_val_Dhl && !muldivreq_rdy );
 
-  // Stall for data hazards if either of the operand read addresses are
-  // the same as the write addresses of instruction later in the pipeline
+  
+  
 
-  // True when X holds a load that will write rd
+  
   wire load_in_X =
-      inst_val_Xhl            &&   // real instr in X
-      dmemreq_val_Xhl         &&   // it accesses memory
-      !dmemreq_msg_rw_Xhl;         // rw==0  maens "load"
+      inst_val_Xhl            &&   
+      dmemreq_val_Xhl         &&   
+      !dmemreq_msg_rw_Xhl;         
 
-  // RAW load-use hazard
+  
   wire rs1_hazard =
-      rs1_en_Dhl                     && // Use the address rs1
-      (rs1_addr_Dhl == rf_waddr_Xhl) && // The addresses are the same
-      rf_wen_Xhl;                       // Write enabled
+      rs1_en_Dhl                     && 
+      (rs1_addr_Dhl == rf_waddr_Xhl) && 
+      rf_wen_Xhl;                       
 
   wire rs2_hazard =
       rs2_en_Dhl                     &&
       (rs2_addr_Dhl == rf_waddr_Xhl) &&
       rf_wen_Xhl;
 
-  wire stall_hazard_Dhl = load_in_X && (rs1_hazard || rs2_hazard); // TODO (done) checked: 1. Load and 2. Same addresses either rs1 or rs2
+  wire stall_hazard_Dhl = load_in_X && (rs1_hazard || rs2_hazard); 
 
-  // Aggregate Stall Signal
+  
 
-  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl; // TODO (done) muldiv is busy OR there is a load-use hazard 
+  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl; 
 
-  // Next bubble bit
+  
 
   wire bubble_sel_Dhl  = ( squash_Dhl || stall_Dhl );
   wire bubble_next_Dhl = ( !bubble_sel_Dhl ) ? bubble_Dhl
                        : ( bubble_sel_Dhl )  ? 1'b1
                        :                       1'bx;
 
-//----------------------------------------------------------------------
-// X <- D
-//----------------------------------------------------------------------
+
+
+
 
   reg [31:0] ir_Xhl;
   reg  [2:0] br_sel_Xhl;
@@ -565,7 +565,7 @@ module riscv_CoreCtrl
 
   reg        bubble_Xhl;
 
-  // Pipeline Controls
+  
 
   always @ ( posedge clk ) begin
     if ( reset ) begin
@@ -594,29 +594,29 @@ module riscv_CoreCtrl
 
   end
 
-//----------------------------------------------------------------------
-// Execute Stage
-//----------------------------------------------------------------------
 
-  // Is the current stage valid?
 
-  wire inst_val_Xhl = !bubble_Xhl; // TODO (done) Use the "bubble bit"
 
-  // Muldiv request
+
+  
+
+  wire inst_val_Xhl = !bubble_Xhl; 
+
+  
 
   assign muldivreq_val = muldivreq_val_Xhl && inst_val_Xhl;
   assign muldivresp_rdy = !stall_Xhl;
 
-  // Only send a valid dmem request if not stalled
+  
 
   assign dmemreq_msg_rw  = dmemreq_msg_rw_Xhl;
   assign dmemreq_msg_len = dmemreq_msg_len_Xhl;
   assign dmemreq_val     = ( inst_val_Xhl && !stall_Xhl && dmemreq_val_Xhl );
 
-  // Resolve Branch
+  
 
-  // Signals come from the datapath, were comparisons are made
-  wire brj_taken_Xhl =  // TODO (done) same as the single cycle cuz here is where the actual comparisons are done
+  
+  wire brj_taken_Xhl =  
     (br_sel_Xhl == br_beq  && branch_cond_eq_Xhl)  ||
     (br_sel_Xhl == br_bne  && branch_cond_ne_Xhl)  ||
     (br_sel_Xhl == br_blt  && branch_cond_lt_Xhl)  ||
@@ -624,40 +624,40 @@ module riscv_CoreCtrl
     (br_sel_Xhl == br_bge  && branch_cond_ge_Xhl)  ||
     (br_sel_Xhl == br_bgeu && branch_cond_geu_Xhl);
 
-  // Dummy Squash Signal
+  
 
   wire squash_Xhl = 1'b0;
 
-  // Stall in X if muldiv reponse is not valid and there was a valid request
+  
 
   wire stall_muldiv_Xhl = ( muldivreq_val_Xhl && inst_val_Xhl && !muldivresp_val );
 
-  // Stall in X if imem is not ready
+  
 
   wire stall_imem_Xhl = !imemreq_rdy;
 
-  // Stall in X if dmem is not ready and there was a valid request
+  
 
   wire stall_dmem_Xhl = ( dmemreq_val_Xhl && inst_val_Xhl && !dmemreq_rdy );
 
-  // Aggregate Stall Signal
+  
 
-  // check stall on important compontents: imem, dmem or muldiv
-  assign stall_Xhl =  // TODO (done) 
-        stall_muldiv_Xhl      // waiting for mul/div response
-     || stall_imem_Xhl        // I-cache not ready
-     || stall_dmem_Xhl;       // D-cache not ready
+  
+  assign stall_Xhl =  
+        stall_muldiv_Xhl      
+     || stall_imem_Xhl        
+     || stall_dmem_Xhl;       
 
-  // Next bubble bit
+  
 
   wire bubble_sel_Xhl  = ( squash_Xhl || stall_Xhl );
   wire bubble_next_Xhl = ( !bubble_sel_Xhl ) ? bubble_Xhl
                        : ( bubble_sel_Xhl )  ? 1'b1
                        :                       1'bx;
 
-//----------------------------------------------------------------------
-// M <- X
-//----------------------------------------------------------------------
+
+
+
 
   reg [31:0] ir_Mhl;
   reg        dmemreq_val_Mhl;
@@ -668,7 +668,7 @@ module riscv_CoreCtrl
 
   reg        bubble_Mhl;
 
-  // Pipeline Controls
+  
 
   always @ ( posedge clk ) begin
     if ( reset ) begin
@@ -688,45 +688,45 @@ module riscv_CoreCtrl
     dmemreq_val_Mhl <= dmemreq_val;
   end
 
-//----------------------------------------------------------------------
-// Memory Stage
-//----------------------------------------------------------------------
 
-  // Is current stage valid?
 
-  wire inst_val_Mhl = !bubble_Mhl; // TODO (done)
 
-  // Data memory queue control signals
+
+  
+
+  wire inst_val_Mhl = !bubble_Mhl; 
+
+  
 
   assign dmemresp_queue_en_Mhl = ( stall_Mhl && dmemresp_val );
   wire   dmemresp_queue_val_next_Mhl
     = stall_Mhl && ( dmemresp_val || dmemresp_queue_val_Mhl );
 
-  // Dummy Squash Signal
+  
 
   wire squash_Mhl = 1'b0;
 
-  // Stall in M if memory response is not returned for a valid request
+  
 
   wire stall_dmem_Mhl = ( !reset && dmemreq_val_Mhl && inst_val_Mhl && !dmemresp_val );
   wire stall_imem_Mhl = ( !reset && imemreq_val_Fhl && inst_val_Fhl && !imemresp_val );
 
-  // Aggregate Stall Signal
+  
 
-  assign stall_Mhl =  // TODO (done)
-        stall_dmem_Mhl        // waiting for load/store data
-     || stall_imem_Mhl;       // front-end miss 
+  assign stall_Mhl =  
+        stall_dmem_Mhl        
+     || stall_imem_Mhl;       
 
-  // Next bubble bit
+  
 
   wire bubble_sel_Mhl  = ( squash_Mhl || stall_Mhl );
   wire bubble_next_Mhl = ( !bubble_sel_Mhl ) ? bubble_Mhl
                        : ( bubble_sel_Mhl )  ? 1'b1
                        :                       1'bx;
 
-//----------------------------------------------------------------------
-// W <- M
-//----------------------------------------------------------------------
+
+
+
 
   reg [31:0] ir_Whl;
   reg        rf_wen_Whl;
@@ -735,7 +735,7 @@ module riscv_CoreCtrl
 
   reg        bubble_Whl;
 
-  // Pipeline Controls
+  
 
   always @ ( posedge clk ) begin
     if ( reset ) begin
@@ -753,26 +753,26 @@ module riscv_CoreCtrl
     dmemresp_queue_val_Mhl <= dmemresp_queue_val_next_Mhl;
   end
 
-//----------------------------------------------------------------------
-// Writeback Stage
-//----------------------------------------------------------------------
 
-  // Is current stage valid?
 
-  wire inst_val_Whl = !bubble_Whl; // TODO (Done)
 
-  // Only set register file wen if stage is valid
 
-  assign rf_wen_out_Whl = rf_wen_Whl && inst_val_Whl; // TODO (done)
+  
 
-  // Dummy squahs and stall signals
+  wire inst_val_Whl = !bubble_Whl; 
+
+  
+
+  assign rf_wen_out_Whl = rf_wen_Whl && inst_val_Whl; 
+
+  
 
   wire squash_Whl = 1'b0;
   assign stall_Whl  = 1'b0;
 
-//----------------------------------------------------------------------
-// Debug registers for instruction disassembly
-//----------------------------------------------------------------------
+
+
+
 
   reg [31:0] ir_debug;
   reg        inst_val_debug;
@@ -782,9 +782,9 @@ module riscv_CoreCtrl
     inst_val_debug <= inst_val_Whl;
   end
 
-//----------------------------------------------------------------------
-// CSR register
-//----------------------------------------------------------------------
+
+
+
 
   reg         csr_stats;
 
@@ -797,9 +797,9 @@ module riscv_CoreCtrl
     end
   end
 
-//========================================================================
-// Disassemble instructions
-//========================================================================
+
+
+
 
   `ifndef SYNTHESIS
 
@@ -830,11 +830,11 @@ module riscv_CoreCtrl
 
   `endif
 
-//========================================================================
-// Assertions
-//========================================================================
-// Detect illegal instructions and terminate the simulation if multiple
-// illegal instructions are detected in succession.
+
+
+
+
+
 
   `ifndef SYNTHESIS
 
@@ -857,25 +857,25 @@ module riscv_CoreCtrl
 
   `endif
 
-//========================================================================
-// Stats
-//========================================================================
+
+
+
 
   `ifndef SYNTHESIS
 
   reg [31:0] num_inst    = 32'b0;
   reg [31:0] num_cycles  = 32'b0;
-  reg        stats_en    = 1'b0; // Used for enabling stats on asm tests
+  reg        stats_en    = 1'b0; 
 
   always @( posedge clk ) begin
     if ( !reset ) begin
 
-      // Count cycles if stats are enabled
+      
 
       if ( stats_en || csr_stats ) begin
         num_cycles = num_cycles + 1;
 
-        // Count instructions for every cycle not squashed or stalled
+        
 
         if ( inst_val_Dhl && !stall_Dhl ) begin
           num_inst = num_inst + 1;
@@ -892,4 +892,4 @@ endmodule
 
 `endif
 
-// vim: set textwidth=0 ts=2 sw=2 sts=2 :
+

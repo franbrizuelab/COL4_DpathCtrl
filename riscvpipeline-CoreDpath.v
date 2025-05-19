@@ -227,7 +227,7 @@ module riscv_CoreDpath
 
   assign pc_mux_out_Phl =     // TODO (Done) Branching is a litlle more complex, we may do a "misprediction"
     (pc_mux_sel_Phl == pm_p) ? pc_plus4_Phl :
-    (pc_mux_sel_Phl == pm_b && brj_taken_Phl) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
+    (pc_mux_sel_Phl == pm_b) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
     (pc_mux_sel_Phl == pm_j) ? jump_targ_Phl :
     (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
     reset_vector;  // jump to reset vector, prevents fetching garbage
@@ -290,12 +290,12 @@ module riscv_CoreDpath
   wire   [4:0] inst_rs1_Dhl;
   wire   [4:0] inst_rs2_Dhl;
   wire   [4:0] inst_rd_Dhl;
-  wire   [4:0] inst_shamt_Dhl;
-  wire  [31:0] imm_i_Dhl;
-  wire  [31:0] imm_u_Dhl;
-  wire  [31:0] imm_uj_Dhl;
-  wire  [31:0] imm_s_Dhl;
-  wire  [31:0] imm_sb_Dhl;
+  wire   [4:0] inst_shamt_Dhl;      //
+  wire  [31:0] imm_i_Dhl;           // Used with Jr_targ, also gets extended, then goes to op1_mux
+  wire  [31:0] imm_u_Dhl;           // Gets extended, then goes to op1_mux
+  wire  [31:0] imm_uj_Dhl;          // Used with J_targ
+  wire  [31:0] imm_s_Dhl;           // Gets extended, then goes to op1_mux
+  wire  [31:0] imm_sb_Dhl;          // Used with br_targ
 
   // Register file
 

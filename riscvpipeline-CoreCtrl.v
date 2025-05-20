@@ -52,14 +52,12 @@ module riscv_CoreCtrl
   output            stall_Xhl,
   output            stall_Mhl,
   output            stall_Whl,
-
-  // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-  //output        rf_wen_Mhl,
-  //output [4:0]  rf_waddr_Mhl,
-  //output [31:0] execute_mux_out_Mhl,
   
   // DISCLAIMER: Connections to handle branching info between stages
   output brj_taken_Xhl,
+
+  // DISCLAIMER: connections added to implement imemreq_val
+  output pc_mux_out_valid_Phl,
 
   // Control Signals (dpath->ctrl)
 
@@ -88,8 +86,8 @@ module riscv_CoreCtrl
 
   // Only send a valid imem request if not stalle
 
-  wire   imemreq_val_Phl = reset || (!stall_Phl); // && pc_mux_out_valid_Phl);
-  assign imemreq_val     = imemreq_val_Phl;
+  wire   imemreq_val_Phl = !stall_Phl && pc_mux_out_valid_Phl;
+  //assign imemreq_val     = pc_mux_out_valid_P ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
 
   // Dummy Squash Signal
 
@@ -537,7 +535,9 @@ module riscv_CoreCtrl
 
   // Aggregate Stall Signal
 
-  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl; // TODO (done) muldiv is busy OR there is a load-use hazard 
+  // Note: add a third condition that checks valid pc_mux_out
+
+  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl || !pc_mux_out_valid_Phl; // TODO (done) muldiv is busy OR there is a load-use hazard.
 
   // Next bubble bit
 

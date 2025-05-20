@@ -194,14 +194,11 @@ module riscv_Core
     .branch_cond_geu_Xhl	  (branch_cond_geu_Xhl),
     .proc2csr_data_Whl      (proc2csr_data_Whl),
 
-    // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-
-    //.rf_wen_Mhl           (rf_wen_Mhl),
-    //.rf_waddr_Mhl         (rf_waddr_Mhl),
-    //.execute_mux_out_Mhl  (execute_mux_out_Mhl),
-
   // DISCLAIMER: Connections to handle branching info between stages
     .brj_taken_Xhl          (brj_taken_Xhl),
+
+  // DISCLAIMER: connections added to implement imemreq_val
+    .pc_mux_out_valid_Phl   (pc_mux_out_valid_Phl),
 
     // CSR Status
 
@@ -256,6 +253,9 @@ module riscv_Core
   // DISCLAIMER: Connections to handle branching info between stages
     .brj_taken_Xhl          (brj_taken_Xhl),
 
+  // DISCLAIMER: connections added to implement imemreq_val
+    .pc_mux_out_valid_Phl   (pc_mux_out_valid_Phl),
+
     // Control Signals (dpath->ctrl)
 
     .branch_cond_eq_Xhl	     (branch_cond_eq_Xhl),
@@ -265,11 +265,6 @@ module riscv_Core
     .branch_cond_ge_Xhl	     (branch_cond_ge_Xhl),
     .branch_cond_geu_Xhl	 (branch_cond_geu_Xhl),
     .proc2csr_data_Whl       (proc2csr_data_Whl)
-
-    // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-    //.rf_wen_Mhl           (rf_wen_Mhl),
-    //.rf_waddr_Mhl         (rf_waddr_Mhl),
-    //.execute_mux_out_Mhl  (execute_mux_out_Mhl),
 
   );
 

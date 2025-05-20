@@ -51,13 +51,12 @@ module riscv_CoreDpath
   input         stall_Mhl,
   input         stall_Whl,
 
-  // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
-  //input        rf_wen_Mhl,
-  //input [4:0]  rf_waddr_Mhl,
-  //input [31:0] execute_mux_out_Mhl,
-
   // DISCLAIMER: Connections to handle branching info between stages
   input brj_taken_Xhl,
+
+  // DISCLAIMER: connections added to implement imemreq_val
+  output pc_mux_out_valid_Phl,
+
 
   // Control Signals (dpath->ctrl)
 
@@ -230,10 +229,18 @@ module riscv_CoreDpath
     (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
     pc_plus4_Phl;  // jump to reset vector, prevents fetching garbage
 
-  
-  // Send out imem request early
+  // This part is intended to act as a way to check wether the chosen addresss is valid in this cycle
+  // The signal has to go to CoreCtrl and be used to determine if imemreq_val
 
-  assign imemreq_msg_addr = (!reset) ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
+  wire pc_mux_out_valid_Phl =
+   (pc_mux_sel_Phl == pm_p) ? 1'b1                   :
+   (pc_mux_sel_Phl == pm_b) ? branch_targ_valid_Phl    :
+   (pc_mux_sel_Phl == pm_j) ? jump_targ_valid_Phl      :
+   jumpreg_targ_valid_P;
+
+  // Send out imem request early
+  // Part of modification for Ctrl/Dpath connection (PCFix)
+  assign imemreq_msg_addr = pc_mux_out_valid_P ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
 
 
 //----------------------------------------------------------------------

@@ -62,7 +62,7 @@ module riscv_CoreCtrl
   output brj_taken_Xhl,
 
   // DISCLAIMER: connections added to implement imemreq_val
-  output pc_mux_out_valid_Phl,
+  input pc_mux_out_valid_Phl,
 
   // Control Signals (dpath->ctrl)
 

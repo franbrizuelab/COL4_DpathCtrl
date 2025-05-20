@@ -31,7 +31,7 @@ module riscv_CoreDpath
   // It will serve the same purpose, but keeping the name
   // Will lead to confusion
 
-  //output     [ 1:0] pc_mux_sel_Phl,
+  output     [ 1:0] pc_mux_sel_Phl,
   input   [1:0] brj_mux_sel_Xhl,
   input   [1:0] op0_mux_sel_Dhl,
   input   [2:0] op1_mux_sel_Dhl,
@@ -230,7 +230,7 @@ module riscv_CoreDpath
   // When the program starts, help us move forward
   // When moving to a new addres, continue addign 4 there and "go line by line"
 
-  assign pc_plus4_value = reset_mux_out + 2'd4; // TODO (Done) 
+  assign pc_plus4_value = reset_mux_out + 3'd4; // TODO (Done) 
   
 
   always @ (posedge clk) begin
@@ -271,22 +271,22 @@ module riscv_CoreDpath
   // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
 
   assign pc_mux_out_Phl =     // TODO (Done)
-    (pc_mux_sel_Phl == pc_brj)     ? pc_plus4_Phl   :  
-    (pc_mux_sel_Phl == pc_pcplus4) ? jump_targ_valid_Phl     :
-    jumpreg_targ_valid_P;
+    (brj_taken_Xhl == pc_brj)     ? pc_plus4_Phl   :  
+    (brj_taken_Xhl == pc_pcplus4) ? jump_targ_valid_Phl     :
+    jumpreg_targ_valid_Phl;
 
   // This part is intended to act as a way to check wether the chosen addresss is valid in this cycle
   // The signal has to go to CoreCtrl and be used to determine if imemreq_val
 
   wire pc_mux_out_valid_Phl =
-   (pc_mux_sel_Phl == pm_p) ? 1'b1                   :
-   (pc_mux_sel_Phl == pm_b) ? branch_targ_valid_Phl    :
-   (pc_mux_sel_Phl == pm_j) ? jump_targ_valid_Phl      :
-   jumpreg_targ_valid_P;
+   (brj_mux_sel_Xhl == pm_p) ? 1'b1                   :
+   (brj_mux_sel_Xhl == pm_b) ? branch_targ_valid_Phl    :
+   (brj_mux_sel_Xhl == pm_j) ? jump_targ_valid_Phl      :
+   jumpreg_targ_valid_Phl;
 
   // Send out imem request early
   // Part of modification for Ctrl/Dpath connection (PCFix)
-  assign imemreq_msg_addr = pc_mux_out_valid_P ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
+  assign imemreq_msg_addr = pc_mux_out_valid_Phl ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
 
 
 //----------------------------------------------------------------------
@@ -508,13 +508,13 @@ wire        branch_take_Xhl   = brj_taken_Xhl; //Given as input from ctrl
 
 wire [31:0] jumpreg_targ_Xhl  = rs1_val_Xhl + imm_i_Xhl; 
 
-  wire [31:0] brj_mux_out =
-    (brj_mux_sel_Xhl ==  pm_x)  ?   0xDEADBEEF:          // don't care xd
-    (brj_mux_sel_Xhl ==  pm_p)   ?   muldiv_mux_out_Xhl:   // Use muldiv output
-    (brj_mux_sel_Xhl ==  pm_b)  ?   alu_out_Xhl:          // Use ALU output
-    (brj_mux_sel_Xhl ==  pm_j)   ?   muldiv_mux_out_Xhl:   // Use muldiv output
-    (brj_mux_sel_Xhl ==  pm_r)   ?   muldiv_mux_out_Xhl:   // Use muldiv output
-    32'd0;
+wire [31:0] brj_mux_out =
+  (brj_mux_sel_Xhl ==  pm_x)    ?   32'hDEADBEEF:          // don't care xd
+  (brj_mux_sel_Xhl ==  pm_p)    ?   muldiv_mux_out_Xhl:   // Use muldiv output
+  (brj_mux_sel_Xhl ==  pm_b)    ?   alu_out_Xhl:          // Use ALU output
+  (brj_mux_sel_Xhl ==  pm_j)    ?   muldiv_mux_out_Xhl:   // Use muldiv output
+  (brj_mux_sel_Xhl ==  pm_r)    ?   muldiv_mux_out_Xhl:   // Use muldiv output
+  32'd0;
 //c (dunno what to left here exactly)
 // Pipeline into P  (gated by the *P* stage stall)
 //reg [31:0] branch_targ_Phl, jumpreg_targ_Phl, jump_targ_Phl; ALREADY DECLARED

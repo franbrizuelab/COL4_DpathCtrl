@@ -29,7 +29,12 @@ module riscv_CoreCtrl
 
   // Controls Signals (ctrl->dpath)
 
-  output     [ 1:0] pc_mux_sel_Phl,
+  // NOTE: Change the name of the original varible. 
+  // It will serve the same purpose, but keeping the name
+  // Will lead to confusion
+
+  //output     [ 1:0] pc_mux_sel_Phl,
+  output     [ 1:0] brj_mux_sel_Xhl,
   output     [ 1:0] op0_mux_sel_Dhl,
   output     [ 2:0] op1_mux_sel_Dhl,
   output     [31:0] inst_Dhl,
@@ -82,7 +87,8 @@ module riscv_CoreCtrl
 
   // PC Mux Select
 
-  assign pc_mux_sel_Phl = pc_mux_sel_Dhl; // TODO (done)
+ // This implementation follows different rules so this must be replaced by another thing
+ // assign pc_mux_sel_Phl = pc_mux_sel_Dhl; // TODO (done)
 
   // Only send a valid imem request if not stalled
 
@@ -570,6 +576,9 @@ module riscv_CoreCtrl
   reg        csr_wen_Xhl;
   reg [11:0] csr_addr_Xhl;
 
+  // Takes the info of what kind of branch we need. This is taken from the cs[ ] part
+  reg [1:0] brj_mux_sel_Xhl;
+
   reg        bubble_Xhl;
 
   // Pipeline Controls
@@ -597,6 +606,10 @@ module riscv_CoreCtrl
       csr_addr_Xhl         <= csr_addr_Dhl;
 
       bubble_Xhl           <= bubble_next_Dhl;
+
+      // The original signal of "which address to take" was in this variable. Directly connect to it
+
+      brj_mux_sel_Xhl      <= pc_mux_sel_Dhl; //c probably need to change this name also, for clarity
     end
 
   end

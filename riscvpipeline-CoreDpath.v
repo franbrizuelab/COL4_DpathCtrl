@@ -27,7 +27,12 @@ module riscv_CoreDpath
 
   // Controls Signals (ctrl->dpath)
 
-  input   [1:0] pc_mux_sel_Phl,
+  // NOTE: Change the name of the original varible. 
+  // It will serve the same purpose, but keeping the name
+  // Will lead to confusion
+
+  //output     [ 1:0] pc_mux_sel_Phl,
+  input   [1:0] brj_mux_sel_Xhl,
   input   [1:0] op0_mux_sel_Dhl,
   input   [2:0] op1_mux_sel_Dhl,
   input  [31:0] inst_Dhl,
@@ -207,9 +212,26 @@ module riscv_CoreDpath
 
   wire [31:0] reset_vector = 32'h00080000;
 
-  //Note:
+  wire [31:0] reset_mux_out;
 
-  wire [31:0] pc_plus4_value = reset_vector + 32'd4;
+  // ADDED BY ME
+  // Allows pc to go back to reset_vector, using the "reset" control signal provided as input
+
+  assign reset_mux_out = (reset) ? reset_vector : (pc_mux_out_Phl);
+
+  // Note: This is quite different from what we have before
+  // This way, the pc can be updated without waiting for the branch signals.
+  // Pc+4 should come immediately from the same satge insted of waiting for execute stage
+  // (I pretended to do it like that on the first try)
+
+  wire [31:0] pc_plus4_value;
+
+  // Just add 4 to whathever comes from reset_mux
+  // When the program starts, help us move forward
+  // When moving to a new addres, continue addign 4 there and "go line by line"
+
+  assign pc_plus4_value = reset_mux_out + 2'd4; // TODO (Done) 
+  
 
   always @ (posedge clk) begin
     if( reset ) begin
@@ -249,8 +271,8 @@ module riscv_CoreDpath
   // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
 
   assign pc_mux_out_Phl =     // TODO (Done)
-    (brj_taken_Xhl == pc_brj) ? branch_targ_valid_Phl    :
-    (brj_taken_Xhl == pc_pcplus4) ? jump_targ_valid_Phl      :
+    (pc_mux_sel_Phl == pc_brj)     ? pc_plus4_Phl   :  
+    (pc_mux_sel_Phl == pc_pcplus4) ? jump_targ_valid_Phl     :
     jumpreg_targ_valid_P;
 
   // This part is intended to act as a way to check wether the chosen addresss is valid in this cycle
@@ -479,16 +501,20 @@ module riscv_CoreDpath
     32'd0;
 
 
-
-      // ADDED TO COMPLETE PC LOGIC
-//----------------------------------------------------------
+// ADDED TO COMPLETE PC LOGIC
 // Execute-stage results that must reach P
-//----------------------------------------------------------
 wire [31:0] branch_targ_Xhl   = pc_Xhl + imm_i_Xhl;
 wire        branch_take_Xhl   = brj_taken_Xhl; //Given as input from ctrl
 
 wire [31:0] jumpreg_targ_Xhl  = rs1_val_Xhl + imm_i_Xhl; 
 
+  wire [31:0] brj_mux_out =
+    (brj_mux_sel_Xhl ==  pm_x)  ?   0xDEADBEEF:          // don't care xd
+    (brj_mux_sel_Xhl ==  pm_p)   ?   muldiv_mux_out_Xhl:   // Use muldiv output
+    (brj_mux_sel_Xhl ==  pm_b)  ?   alu_out_Xhl:          // Use ALU output
+    (brj_mux_sel_Xhl ==  pm_j)   ?   muldiv_mux_out_Xhl:   // Use muldiv output
+    (brj_mux_sel_Xhl ==  pm_r)   ?   muldiv_mux_out_Xhl:   // Use muldiv output
+    32'd0;
 //c (dunno what to left here exactly)
 // Pipeline into P  (gated by the *P* stage stall)
 //reg [31:0] branch_targ_Phl, jumpreg_targ_Phl, jump_targ_Phl; ALREADY DECLARED

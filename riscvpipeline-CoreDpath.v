@@ -197,8 +197,8 @@ module riscv_CoreDpath
   reg brj_taken_Phl;
   //wire [31:0] branch_targ_Phl;
   reg [31:0] branch_targ_Phl;
-  wire [31:0] jump_targ_Phl;
-  wire [31:0] jumpreg_targ_Phl;
+  reg [31:0] jump_targ_Phl;
+  reg [31:0] jumpreg_targ_Phl;
   wire [31:0] pc_mux_out_Phl;
 
   wire [31:0] reset_vector = 32'h00080000;
@@ -222,25 +222,18 @@ module riscv_CoreDpath
   end
 
   // Pull mux inputs from later stages
-
+  //  pmboludo!
   assign pc_mux_out_Phl =     // TODO (Done) Branching is a litlle more complex, we may do a "misprediction"
     (pc_mux_sel_Phl == pm_p) ? pc_plus4_Phl :
     (pc_mux_sel_Phl == pm_b) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
     (pc_mux_sel_Phl == pm_j) ? jump_targ_Phl :
     (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
-    reset_vector;  // jump to reset vector, prevents fetching garbage
+    pc_plus4_Phl;  // jump to reset vector, prevents fetching garbage
 
-  
-  // ADDED TO COMPLETE PC LOGIC
-  wire pc_mux_out_valid_Phl =
-   (pc_mux_sel_Phl == pm_p) ? 1'b1                   :
-   (pc_mux_sel_Phl == pm_b) ? branch_targ_valid_Phl    :
-   (pc_mux_sel_Phl == pm_j) ? jump_targ_valid_Phl      :
-    jumpreg_targ_valid_P;
   
   // Send out imem request early
 
-  assign imemreq_msg_addr = pc_mux_out_valid_Phl ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
+  assign imemreq_msg_addr = (!reset) ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
 
 
 //----------------------------------------------------------------------
@@ -315,15 +308,15 @@ module riscv_CoreDpath
 
   // Operand 0 mux
 
-  // CHANGE FROM wire to reg so we can pipelinerize it XDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
-  reg [31:0] rs1_val_D = rf_rdata0_Dhl;
-  reg [31:0] rs2_val_D = rf_rdata1_Dhl;
+  //  we  pipelinerize it XDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+  wire [31:0] rs1_val_Dhl = rf_rdata0_Dhl;
+  wire [31:0] rs2_val_Dhl = rf_rdata1_Dhl;
 
 
 
 
   wire [31:0] op0_mux_out_Dhl =  // TODO (Done)  similar to single-cycle but check for "most recent value"
-    (op0_mux_sel_Dhl == am_rdat)  ? rs1_val_D:     // Use correct value, avoid using old regsiter value
+    (op0_mux_sel_Dhl == am_rdat)  ? rs1_val_Dhl:     // Use correct value, avoid using old regsiter value
     (op0_mux_sel_Dhl == am_pc)    ? pc_Dhl :            // PC
     (op0_mux_sel_Dhl == am_pc4)   ? pc_plus4_Dhl :      // PC + 4
     (op0_mux_sel_Dhl == am_0)     ? 32'd0 :         // 0 Constant
@@ -332,18 +325,18 @@ module riscv_CoreDpath
 
   wire [31:0] op1_mux_out_Dhl =  // TODO (Done) pretty much the same as op0
     (op1_mux_sel_Dhl == bm_rdat)    ? rs2_val_Xhl:      // Use correct value, avoid using old regsiter value
-    (op1_mux_sel_Dhl == bm_shamt)   ? shamt_Xhl :     // Extended 5 bits imm
+    (op1_mux_sel_Dhl == bm_shamt)   ? imm_shamt_Xhl :     // Extended 5 bits imm
     (op1_mux_sel_Dhl == bm_imm_u)   ? imm_u_Xhl :
     (op1_mux_sel_Dhl == bm_imm_sb)  ? imm_sb_Xhl :
     (op1_mux_sel_Dhl == bm_imm_i)   ? imm_i_Xhl :
     (op1_mux_sel_Dhl == bm_imm_s)   ? imm_s_Xhl :
-    (op1_mux_sel_Dhl == bm_0  )       ? 32'd0 :
+    (op1_mux_sel_Dhl == bm_0  )     ? 32'd0 :
     reset_vector;  // jump to reset vector, prevents fetching garbage 
 
   // ADDED TO COMPLETE PC LOGIC
   // Decode stage jump target that must reach P
-  wire [31:0] jump_targ_Dhl     = pc_Dhl + immJ_D; //c
-  wire        is_jal_D        = (opcode_D == OP_JAL);
+  wire [31:0] jump_targ_Dhl     = pc_Dhl + imm_uj_Dhl; 
+  //wire        is_jal_D        = (opcode_D == OP_JAL); //c
 
 
   // wdata with bypassing
@@ -351,15 +344,15 @@ module riscv_CoreDpath
   wire [31:0] wdata_Dhl = rf_rdata1_Dhl;
 
   // DISCLAIMER: declaration of missing reg branch_targ_Dhl
-  reg [31:0] branch_targ_Dhl;
+  //reg [31:0] branch_targ_Dhl;
 
   always @(posedge clk) begin
     if ( reset ) begin
-      branch_targ_Dhl    <= 32'b0;
+      //branch_targ_Dhl    <= 32'b0;
     end
     else if ( !stall_Dhl ) begin
       // Compute the static target PC = PC+D + imm_sb
-      branch_targ_Dhl  <= pc_Dhl + sb_shamt; // Add the PC + exended shift amount
+      //branch_targ_Dhl  <= pc_Dhl + sb_shamt; // Add the PC + exended shift amount
     end
   end
 
@@ -368,13 +361,13 @@ module riscv_CoreDpath
 //----------------------------------------------------------------------
 
   reg [31:0] pc_Xhl;
-  reg [31:0] branch_targ_Xhl;
+  //reg [31:0] branch_targ_Xhl;
   reg [31:0] op0_mux_out_Xhl;
   reg [31:0] op1_mux_out_Xhl;
   reg [31:0] wdata_Xhl;
 
   // ADDED TO COMPLETE PC LOGIC
-  reg [31:0] imm_i_Xhl, imm_sb_Xhl, imm_uj_Xhl, imm_i_Xhl, inst_s_Xhl, inst_u_Xhl, inst_shamt_Xhl;      // branch-/jalr-imms seen by X
+  reg [31:0] imm_i_Xhl, imm_sb_Xhl, imm_uj_Xhl, imm_s_Xhl, imm_u_Xhl, imm_shamt_Xhl;      // branch-/jalr-imms seen by X
 
   reg[31:0] rs1_val_Xhl, rs2_val_Xhl;
 
@@ -384,16 +377,18 @@ module riscv_CoreDpath
       imm_i_Xhl <= 32'd0;
       imm_sb_Xhl <= 32'd0;
       imm_uj_Xhl <= 32'd0;
-    <= 32'd0;
+      imm_s_Xhl <= 32'd0;
+      imm_u_Xhl <= 32'd0;
+      imm_shamt_Xhl <= 32'd0;
     end
     else if( !stall_Xhl ) begin
       pc_Xhl          <= pc_Dhl;
-      branch_targ_Xhl <= branch_targ_Dhl;
+      //branch_targ_Xhl <= branch_targ_Dhl;
       op0_mux_out_Xhl <= op0_mux_out_Dhl;
       op1_mux_out_Xhl <= op1_mux_out_Dhl;
       wdata_Xhl       <= wdata_Dhl;
 
-      // ADDED TO COMPLETE PC LOGIC
+      // ADDED TO COMPLETE PC LOGIC (I discovered i don't use some, but theyre still there)
       imm_i_Xhl <= imm_i_Dhl;               // from decoder output-bus
       imm_sb_Xhl <= imm_sb_Dhl;
       imm_uj_Xhl <= imm_uj_Dhl;
@@ -458,30 +453,30 @@ module riscv_CoreDpath
 //----------------------------------------------------------
 // Execute-stage results that must reach P
 //----------------------------------------------------------
-wire [31:0] branch_targ_X   = pc_Xhl + imm_i_Xhl;
-wire        branch_take_X   = brj_taken_Xhl; //Given as input from ctrl
+wire [31:0] branch_targ_Xhl   = pc_Xhl + imm_i_Xhl;
+wire        branch_take_Xhl   = brj_taken_Xhl; //Given as input from ctrl
 
-wire [31:0] jumpreg_targ_X  = rs1_val_X + imm_sb_Xh; //c
+wire [31:0] jumpreg_targ_Xhl  = rs1_val_Xhl + imm_i_Xhl; 
 
 //c (dunno what to left here exactly)
 // Pipeline into P  (gated by the *P* stage stall)
-reg [31:0] branch_targ_Phl, jumpreg_targ_Phl, jump_targ_Phl;
-reg        branch_targ_valid_P, jumpreg_targ_valid_P, jump_targ_valid_P;
+//reg [31:0] branch_targ_Phl, jumpreg_targ_Phl, jump_targ_Phl; ALREADY DECLARED
+reg        branch_targ_valid_Phl, jumpreg_targ_valid_Phl, jump_targ_valid_Phl;
 
 always @(posedge clk) begin
   if (reset) begin
     branch_targ_valid_Phl  <= 1'b0;
     jump_targ_valid_Phl    <= 1'b0;
     jumpreg_targ_valid_Phl <= 1'b0;
-  end else if (!stall_Phl) begin
-    branch_targ_P        <= branch_targ_X;
-    branch_targ_valid_Phl  <= branch_take_X;
+  end else  begin                             // WARNING: check later //c
+    branch_targ_Phl        <= branch_targ_Xhl;
+    branch_targ_valid_Phl  <= branch_take_Xhl;
 
-    jumpreg_targ_P       <= jumpreg_targ_X;
+    jumpreg_targ_Phl       <= jumpreg_targ_Xhl;
     jumpreg_targ_valid_Phl <= 1'b1;                 // jalr always produces a target
 
     jump_targ_Phl          <= jump_targ_Dhl;
-    jump_targ_valid_Phl    <= is_jal_D;
+    //jump_targ_valid_Phl    <= is_jal_D;
   end
 end
 

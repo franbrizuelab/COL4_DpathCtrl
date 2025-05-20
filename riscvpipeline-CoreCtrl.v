@@ -88,7 +88,7 @@ module riscv_CoreCtrl
 
   // Only send a valid imem request if not stalle
 
-  wire   imemreq_val_Phl = reset || !stall_Phl;
+  wire   imemreq_val_Phl = reset || (!stall_Phl); // && pc_mux_out_valid_Phl);
   assign imemreq_val     = imemreq_val_Phl;
 
   // Dummy Squash Signal

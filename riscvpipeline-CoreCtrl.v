@@ -84,9 +84,10 @@ module riscv_CoreCtrl
 
   assign pc_mux_sel_Phl = pc_mux_sel_Dhl; // TODO (done)
 
-  // Only send a valid imem request if not stalle
+  // Only send a valid imem request if not stalled
 
   wire   imemreq_val_Phl = !stall_Phl && pc_mux_out_valid_Phl;
+
   //assign imemreq_val     = pc_mux_out_valid_P ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
 
   // Dummy Squash Signal
@@ -213,13 +214,18 @@ module riscv_CoreCtrl
   localparam br_bge  = 3'd5;
   localparam br_bgeu = 3'd6;
 
-  // PC Mux Select
+  // BRJ MUX SELECT
 
   localparam pm_x   = 2'bx;  // Don't care
   localparam pm_p   = 2'd0;  // Use pc+4
   localparam pm_b   = 2'd1;  // Use branch address
   localparam pm_j   = 2'd2;  // Use jump address
   localparam pm_r   = 2'd3;  // Use jump register
+
+  // PC MUX SELECT
+  
+  localparam pc_brj   = 1'd0; // Use Output of brj MUX
+  localparam pc_pc4 = 1'd0;   // Use PcPlus4_Phl
 
   // Operand 0 Mux Select
 
@@ -542,9 +548,10 @@ module riscv_CoreCtrl
   // Next bubble bit
 
   wire bubble_sel_Dhl  = ( squash_Dhl || stall_Dhl );
-  wire bubble_next_Dhl = ( !bubble_sel_Dhl ) ? bubble_Dhl
-                       : ( bubble_sel_Dhl )  ? 1'b1
-                       :                       1'bx;
+  wire bubble_next_Dhl = 
+    ( !bubble_sel_Dhl ) ? bubble_Dhl
+  : ( bubble_sel_Dhl )  ? 1'b1
+  : 1'bx;
 
 //----------------------------------------------------------------------
 // X <- D

@@ -92,13 +92,18 @@ module riscv_CoreDpath
   localparam br_bge  = 3'd5;
   localparam br_bgeu = 3'd6;
 
-  // PC Mux Select
+  // BRJ MUX SELECT
 
   localparam pm_x   = 2'bx;  // Don't care
   localparam pm_p   = 2'd0;  // Use pc+4
   localparam pm_b   = 2'd1;  // Use branch address
   localparam pm_j   = 2'd2;  // Use jump address
   localparam pm_r   = 2'd3;  // Use jump register
+
+  // PC MUX SELECT
+
+  localparam pc_brj   = 1'd0;  // Use Output of brj MUX
+  localparam pc_pcplus4 = 1'd0;  // Use PcPlus4_Phl
 
   // Operand 0 Mux Select
 
@@ -202,9 +207,9 @@ module riscv_CoreDpath
 
   wire [31:0] reset_vector = 32'h00080000;
 
-  //Note: pc-plus4_Phl is unsassigned. We need to find the signal to assign a value to it
+  //Note:
 
-  wire [31:0] pc_plus4_value = pc_Fhl + 32'd4;
+  wire [31:0] pc_plus4_value = reset_vector + 32'd4;
 
   always @ (posedge clk) begin
     if( reset ) begin
@@ -218,16 +223,35 @@ module riscv_CoreDpath
 
       brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; 
     end
+    else begin                       // WARNING: Check this later --- WARNING 2: Changed it to work onlt if F not stalled
+      pc_plus4_Phl <= pc_plus4_value;
+      branch_targ_Phl <= branch_targ_Xhl;
+
+      brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; 
+    end
   end
 
   // Pull mux inputs from later stages
-  //  pmboludo!
+  
+  
+
+  // Older implementation. I saw that the pc had a truckload of problems so the next implementation wil be a lot different, I further separate the functinality 
+  // of the PC_mux into two
+  /*
   assign pc_mux_out_Phl =     // TODO (Done) Branching is a litlle more complex, we may do a "misprediction"
-    (pc_mux_sel_Phl == pm_p) ? pc_plus4_Phl :
+    ( _Phl == pm_p) ? pc_plus4_Phl :
     (pc_mux_sel_Phl == pm_b) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
     (pc_mux_sel_Phl == pm_j) ? jump_targ_Phl :
     (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
     pc_plus4_Phl;  // jump to reset vector, prevents fetching garbage
+  */
+
+  // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
+
+  assign pc_mux_out_Phl =     // TODO (Done)
+    (brj_taken_Xhl == pc_brj) ? branch_targ_valid_Phl    :
+    (brj_taken_Xhl == pc_pcplus4) ? jump_targ_valid_Phl      :
+    jumpreg_targ_valid_P;
 
   // This part is intended to act as a way to check wether the chosen addresss is valid in this cycle
   // The signal has to go to CoreCtrl and be used to determine if imemreq_val

@@ -236,21 +236,21 @@ module riscv_CoreDpath
   always @ (posedge clk) begin
     if( reset ) begin
       pc_plus4_Phl <= pc_plus4_value;
-      brj_taken_Xhl <= 1'b0;
-      brj_taken_Phl <= 1'b0;
+      //brj_taken_Xhl <= 1'b0;  //temp removed
+      //brj_taken_Phl <= 1'b0;  //temp removed
 
     end
     else if( !stall_Fhl ) begin                       // WARNING: Check this later --- WARNING 2: Changed it to work onlt if F not stalled
       //pc_plus4_Phl <= pc_plus4_value;
       branch_targ_Phl <= branch_targ_Xhl;
 
-      brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; 
+      //brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; //temp removed 
     end
     else begin                       // WARNING: Check this later --- WARNING 2: Changed it to work onlt if F not stalled
       pc_plus4_Phl <= pc_plus4_value;
       branch_targ_Phl <= branch_targ_Xhl;
 
-      brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; 
+      //rj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; //temp removed
     end
   end
 

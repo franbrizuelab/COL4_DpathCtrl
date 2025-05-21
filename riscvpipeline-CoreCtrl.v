@@ -435,9 +435,8 @@ module riscv_CoreCtrl
   // Take the bits that define the branch
   wire       brj_taken_Dhl = cs[37];    // TODO (done)
   wire [2:0] br_sel_Dhl    = cs[36:34]; // TODO (done) according to the control message bits
-  wire instr_is_branch_Dhl = (br_sel_Dhl != br_none);
-
-
+  
+  //wire instr_is_branch_Dhl = (br_sel_Dhl != br_none);
   //wire instr_is_jump_Dhl   = cs[37];     // 1 for JAL/JALR
   // Boolean to indicate whether a branch or jump has been taken
   //wire brj_taken_Dhl =                            // TODO (Done)
@@ -501,7 +500,7 @@ module riscv_CoreCtrl
 
   // Register Writeback Controls
 
-  wire rf_wen_Dhl         = cs[6]; // TODO (done) same as bf
+  wire rf_wen_Dhl         = cs[6]; // TODO (done) same as bf --c do we need to check more things?
   wire [4:0] rf_waddr_Dhl = cs[5:1]; // TODO (done) same as bf
 
   // CSR register write enable

@@ -260,18 +260,10 @@ module riscv_CoreDpath
 
   // Older implementation. I saw that the pc had a truckload of problems so the next implementation wil be a lot different, I further separate the functinality 
   // of the PC_mux into two
-  /*
-  assign pc_mux_out_Phl =     // TODO (Done) Branching is a litlle more complex, we may do a "misprediction"
-    ( _Phl == pm_p) ? pc_plus4_Phl :
-    (pc_mux_sel_Phl == pm_b) ? branch_targ_Phl :            // Take the branch if, in EX stage, we found that it should be taken
-    (pc_mux_sel_Phl == pm_j) ? jump_targ_Phl :
-    (pc_mux_sel_Phl == pm_r) ? jumpreg_targ_Phl :
-    pc_plus4_Phl;  // jump to reset vector, prevents fetching garbage
-  */
 
   // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
 
-  assign pc_mux_out_Phl = pc_plus4_Fhl;// TODO (Done) //c hardcoided this to try to make pc+4 work DAMN
+  assign pc_mux_out_Phl = pc_plus4_Fhl; // TODO (Done) --c hardcoided this to try to make pc+4 work DAMN
     //(!brj_taken_Xhl)     ? pc_plus4_Phl   :  
     //(brj_taken_Xhl) ? jump_targ_valid_Phl     :
     //pc_plus4_Phl;
@@ -388,7 +380,8 @@ module riscv_CoreDpath
   // ADDED TO COMPLETE PC LOGIC
   // Decode stage jump target that must reach P
   wire [31:0] jump_targ_Dhl     = pc_Dhl + imm_uj_Dhl; 
-  //wire        is_jal_D        = (opcode_D == OP_JAL); //c
+  //wire        is_jal_D        = (opcode_D == OP_JAL); 
+  //c
 
 
   // wdata with bypassing
@@ -524,7 +517,7 @@ always @(posedge clk) begin
     branch_targ_valid_Phl  <= 1'b0;
     jump_targ_valid_Phl    <= 1'b0;
     jumpreg_targ_valid_Phl <= 1'b0;
-  end else  begin                             // WARNING: check later //c
+  end else  begin                             // WARNING: check later --c
     branch_targ_Phl        <= branch_targ_Xhl;
     branch_targ_valid_Phl  <= branch_take_Xhl;
 

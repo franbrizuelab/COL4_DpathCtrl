@@ -287,8 +287,7 @@ module riscv_CoreDpath
 
   // Send out imem request early
   // Part of modification for Ctrl/Dpath connection (PCFix)
-  assign imemreq_msg_addr = pc_mux_out_valid_Phl ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
-
+  assign imemreq_msg_addr = ( reset ) ? reset_vector : pc_Fhl;
 
 //----------------------------------------------------------------------
 // F <- P

@@ -549,7 +549,7 @@ module riscv_CoreCtrl
 
   // Note: add a third condition that checks valid pc_mux_out
 
-  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl || !pc_mux_out_valid_Phl; // TODO (done) muldiv is busy OR there is a load-use hazard.
+  assign stall_Dhl =  stall_muldiv_Dhl || stall_hazard_Dhl; // TODO (done) muldiv is busy OR there is a load-use hazard.
 
   // Next bubble bit
 

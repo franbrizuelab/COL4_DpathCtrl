@@ -433,16 +433,17 @@ module riscv_CoreCtrl
   // Tell the rest of the control-unit and PC‐mux whether the current instr. is a branch or jump, and which one it is
   
   // Take the bits that define the branch
+  wire       brj_taken_Dhl = cs[37];    // TODO (done)
   wire [2:0] br_sel_Dhl    = cs[36:34]; // TODO (done) according to the control message bits
-
-  wire instr_is_jump_Dhl   = cs[37];     // 1 for JAL/JALR
   wire instr_is_branch_Dhl = (br_sel_Dhl != br_none);
 
+
+  //wire instr_is_jump_Dhl   = cs[37];     // 1 for JAL/JALR
   // Boolean to indicate whether a branch or jump has been taken
-  wire brj_taken_Dhl =                            // TODO (Done)
-        instr_is_jump_Dhl                         // JAL/JALR
-        || ( instr_is_branch_Dhl ? brj_taken_Xhl  // If current stage doesn't have a branch, check execute stage result (brj_taken_Xhl)
-        : 1'b0 );
+  //wire brj_taken_Dhl =                            // TODO (Done)
+  //      instr_is_jump_Dhl                         // JAL/JALR
+  //      || ( instr_is_branch_Dhl ? brj_taken_Xhl  // If current stage doesn't have a branch, check execute stage result (brj_taken_Xhl)
+  //      : 1'b0 );
 
   // PC Mux Select
 

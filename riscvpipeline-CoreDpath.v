@@ -286,7 +286,6 @@ module riscv_CoreDpath
    jumpreg_targ_valid_Phl;
 
   // Send out imem request early
-  // Part of modification for Ctrl/Dpath connection (PCFix)
   assign imemreq_msg_addr = ( reset ) ? reset_vector : pc_Fhl;
 
 //----------------------------------------------------------------------

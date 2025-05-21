@@ -264,7 +264,7 @@ module riscv_CoreDpath
   // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
 
   assign pc_mux_out_Phl =  // TODO (Done) 
-    (!brj_taken_Xhl)     ? pc_plus4_Phl   :  
+    (!brj_taken_Xhl)     ? pc_plus4_Fhl   :  
     (brj_taken_Xhl) ? jump_targ_valid_Phl     :
     pc_plus4_Phl;
 

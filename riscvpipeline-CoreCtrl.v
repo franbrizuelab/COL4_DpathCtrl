@@ -608,7 +608,7 @@ module riscv_CoreCtrl
 
       // The original signal of "which address to take" was in this variable. Directly connect to it
 
-      brj_mux_sel_Xhl      <= pc_mux_sel_Dhl; //c probably need to change this name also, for clarity
+      brj_mux_sel_Xhl      <= pc_mux_sel_Dhl; //c probably need to change this name also, for clarity. I left the funct. of pc_mux to brj_mux
     end
 
   end
@@ -763,6 +763,7 @@ module riscv_CoreCtrl
   always @ ( posedge clk ) begin
     if ( reset ) begin
       bubble_Whl <= 1'b1;
+      dmemresp_queue_val_Mhl <= 1'b0; // ADDED BY ME
     end
     else if( !stall_Whl ) begin
       ir_Whl           <= ir_Mhl;

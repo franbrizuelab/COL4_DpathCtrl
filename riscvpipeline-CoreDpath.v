@@ -197,7 +197,7 @@ module riscv_CoreDpath
       resolved_branch_target <= 32'h0;
   end
     // on *any* taken branch in X, latch that cycle's target
-  else if (!stall_Xhl && (
+  else if (!stall_Xhl && (            // WARNING: Check this later --- 
            branch_cond_eq_Xhl || 
            branch_cond_ne_Xhl || 
            branch_cond_lt_Xhl || 
@@ -218,29 +218,27 @@ end
     (pc_mux_sel_Phl == 2'd1) ? branch_targ_Phl  :
     (pc_mux_sel_Phl == 2'd2) ? jump_targ_Phl    :
     (pc_mux_sel_Phl == 2'd3) ? jumpreg_targ_Phl :
-                               32'bx; // TODO 
+    reset_vector; // TODO //c Will pc_plus4_Fhl serve as def 
 
   // Send out imem request early
 
-  assign imemreq_msg_addr
-    = ( reset ) ? reset_vector
-    :             pc_Fhl;
+  assign imemreq_msg_addr = ( reset ) ? reset_vector:pc_Fhl;
 
 //----------------------------------------------------------------------
 // F <- P
 //----------------------------------------------------------------------
 
   reg  [31:0] pc_Fhl;
-  reg init_stall;
+  reg beg_stall; //c still need to get rid of this shi later
 
   always @ (posedge clk) begin         
     if( reset ) begin
-      init_stall <= 1'b1;
+      beg_stall <= 1'b1; 
       pc_Fhl <= reset_vector;
     end
     else begin
-      init_stall <= 1'b0;
-      if (!stall_Fhl && !init_stall) begin
+      beg_stall <= 1'b0;
+      if (!stall_Fhl && !beg_stall) begin
         pc_Fhl <= pc_mux_out_Phl;
       end
     end
@@ -259,7 +257,10 @@ end
 //----------------------------------------------------------------------
 // D <- F
 //----------------------------------------------------------------------
-
+  
+  // DISCLAIMER: Modifications to implement forwarding unit (Take values for Eecution from other stages)
+  //reg [4:0] rs1_Xhl, rs2_Xhl;
+  
   reg [31:0] pc_Dhl;
   reg [31:0] pc_plus4_Dhl;
 

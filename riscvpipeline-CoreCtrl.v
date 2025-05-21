@@ -1,4 +1,4 @@
-
+pc_mux_sel_Phl
 //=========================================================================
 // 5-Stage RISCV-minimal Control Unit
 //=========================================================================
@@ -92,7 +92,7 @@ module riscv_CoreCtrl
 
   // Only send a valid imem request if not stalled
 
-  wire   imemreq_val_Phl = !stall_Phl && pc_mux_out_valid_Phl;
+  wire   imemreq_val_Phl = reset || !stall_Phl;
 
   //assign imemreq_val     = pc_mux_out_valid_P ? pc_mux_out_Phl : pc_Fhl;   // keep last good address
 

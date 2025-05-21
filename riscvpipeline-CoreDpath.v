@@ -217,7 +217,7 @@ module riscv_CoreDpath
   // ADDED BY ME
   // Allows pc to go back to reset_vector, using the "reset" control signal provided as input
 
-  assign reset_mux_out = (reset) ? reset_vector : (pc_mux_out_Phl); //c hardcoded to not have branchs
+  assign reset_mux_out = (reset) ? reset_vector : (pc_mux_out_Phl); 
 
   // Note: This is quite different from what we have before
   // This way, the pc can be updated without waiting for the branch signals.
@@ -263,10 +263,10 @@ module riscv_CoreDpath
 
   // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
 
-  assign pc_mux_out_Phl = pc_plus4_Fhl; // TODO (Done) --c hardcoided this to try to make pc+4 work DAMN
-    //(!brj_taken_Xhl)     ? pc_plus4_Phl   :  
-    //(brj_taken_Xhl) ? jump_targ_valid_Phl     :
-    //pc_plus4_Phl;
+  assign pc_mux_out_Phl =  // TODO (Done) 
+    (!brj_taken_Xhl)     ? pc_plus4_Phl   :  
+    (brj_taken_Xhl) ? jump_targ_valid_Phl     :
+    pc_plus4_Phl;
 
   // This part is intended to act as a way to check wether the chosen addresss is valid in this cycle
   // The signal has to go to CoreCtrl and be used to determine if imemreq_val

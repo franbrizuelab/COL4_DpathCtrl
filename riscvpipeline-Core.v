@@ -51,6 +51,7 @@ module riscv_Core
   wire [31:0] dmemreq_msg_data;
   wire [31:0] dmemresp_msg_data;
 
+  //wire  [1:0] pc_mux_sel_Phl;
   wire  [1:0] brj_mux_sel_Xhl;
   wire  [1:0] op0_mux_sel_Dhl;
   wire  [2:0] op1_mux_sel_Dhl;
@@ -91,7 +92,7 @@ module riscv_Core
 
   // DISCLAIMER: Connections to handle branching info between stages
   wire brj_taken_Xhl;
-  
+
   // DISCLAIMER: connections added to implement imemreq_val
   wire pc_mux_out_valid_Phl;
 

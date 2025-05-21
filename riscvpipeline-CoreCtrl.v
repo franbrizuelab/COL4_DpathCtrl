@@ -138,7 +138,7 @@ module riscv_CoreCtrl
   // Squash instruction in F stage if branch taken for a valid
   // instruction or if there was an exception in X stage
 
-  wire squash_Fhl = brj_taken_Xhl && inst_val_Xhl; // TODO (done)
+  wire squash_Fhl = brj_taken_Xhl && !inst_val_Xhl; // TODO (done)
 
   // Stall in F if D is stalled
 
@@ -585,7 +585,7 @@ module riscv_CoreCtrl
 
   always @ ( posedge clk ) begin
     if ( reset ) begin
-      bubble_Xhl <= 1'b1;
+      bubble_Xhl <= 1'b1; // Note: I set it as 1 first because X has trash on reset!
     end
     else if( !stall_Xhl ) begin
       ir_Xhl               <= ir_Dhl;
@@ -636,13 +636,17 @@ module riscv_CoreCtrl
   // Resolve Branch
 
   // Signals come from the datapath, were comparisons are made
-  wire brj_taken_Xhl =  // TODO (done) same as the single cycle cuz here is where the actual comparisons are done
+  wire brj_taken_Xhl =  // TODO (done) 
+    inst_val_Xhl        // The current isntrucion in X should be valid
+    && 
+    (
     (br_sel_Xhl == br_beq  && branch_cond_eq_Xhl)  ||
     (br_sel_Xhl == br_bne  && branch_cond_ne_Xhl)  ||
     (br_sel_Xhl == br_blt  && branch_cond_lt_Xhl)  ||
     (br_sel_Xhl == br_bltu && branch_cond_ltu_Xhl) ||
     (br_sel_Xhl == br_bge  && branch_cond_ge_Xhl)  ||
-    (br_sel_Xhl == br_bgeu && branch_cond_geu_Xhl);
+    (br_sel_Xhl == br_bgeu && branch_cond_geu_Xhl)
+    );
 
   // Dummy Squash Signal
 

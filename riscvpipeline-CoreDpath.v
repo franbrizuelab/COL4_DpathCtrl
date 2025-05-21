@@ -31,7 +31,7 @@ module riscv_CoreDpath
   // It will serve the same purpose, but keeping the name
   // Will lead to confusion
 
-  output     [ 1:0] pc_mux_sel_Phl,
+  //output     [ 1:0] pc_mux_sel_Phl,
   input   [1:0] brj_mux_sel_Xhl,
   input   [1:0] op0_mux_sel_Dhl,
   input   [2:0] op1_mux_sel_Dhl,
@@ -217,7 +217,7 @@ module riscv_CoreDpath
   // ADDED BY ME
   // Allows pc to go back to reset_vector, using the "reset" control signal provided as input
 
-  assign reset_mux_out = (reset) ? reset_vector : (pc_mux_out_Phl);
+  assign reset_mux_out = (reset) ? reset_vector : (pc_plus4_value); //c hardcoded to not have branchs
 
   // Note: This is quite different from what we have before
   // This way, the pc can be updated without waiting for the branch signals.
@@ -235,12 +235,13 @@ module riscv_CoreDpath
 
   always @ (posedge clk) begin
     if( reset ) begin
-      pc_plus4_Phl <= reset_vector;
+      pc_plus4_Phl <= pc_plus4_value;
+      brj_taken_Xhl <= 1'b0;
       brj_taken_Phl <= 1'b0;
 
     end
     else if( !stall_Fhl ) begin                       // WARNING: Check this later --- WARNING 2: Changed it to work onlt if F not stalled
-      pc_plus4_Phl <= pc_plus4_value;
+      //pc_plus4_Phl <= pc_plus4_value;
       branch_targ_Phl <= branch_targ_Xhl;
 
       brj_taken_Phl <= (brj_taken_Xhl)? 1'b0 : 1'b1; 
@@ -271,9 +272,9 @@ module riscv_CoreDpath
   // Separate pc+4 from other branch addresses, calculated in the execute stage. If no branchs are taken, we just go line by line over the instrucions
 
   assign pc_mux_out_Phl =     // TODO (Done)
-    (brj_taken_Xhl == pc_brj)     ? pc_plus4_Phl   :  
-    (brj_taken_Xhl == pc_pcplus4) ? jump_targ_valid_Phl     :
-    jumpreg_targ_valid_Phl;
+    (!brj_taken_Xhl)     ? pc_plus4_Phl   :  
+    (brj_taken_Xhl) ? jump_targ_valid_Phl     :
+    pc_plus4_Phl;
 
   // This part is intended to act as a way to check wether the chosen addresss is valid in this cycle
   // The signal has to go to CoreCtrl and be used to determine if imemreq_val
